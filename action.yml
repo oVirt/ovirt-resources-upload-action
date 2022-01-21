@@ -69,12 +69,13 @@ runs:
           exit 128
         fi
         echo -e "\e[32mValidating source...\e[0m"
+        set -x
         if [ -z "$(ls ${SOURCE})" ]; then
           echo -e "\e[31mThe source you provided matches no files.\e[0m" >&2
           exit 128
         fi
         echo -e "\e[32mValidating cleanup...\e[0m"
-        if ! [[ "${CLEANUP} =~ ^(yes|no)$ ]]; then
+        if ! [[ "${CLEANUP}" =~ ^(yes|no)$ ]]; then
           echo -e "\e[31mThe value provided to 'cleanup' is invalid, must be 'yes' or 'no'.\e[0m" >&2 
           exit 128
         fi
