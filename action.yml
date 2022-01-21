@@ -48,11 +48,11 @@ runs:
         set -ex
         echo "::add-mask::${USERNAME}"
         echo "::add-mask::${KEY}"
-        if ! [[ "${HOST}" !~ ^([a-zA-Z0-9\.-]+)$ ]]; then
+        if ! [[ "${HOST}" =~ ^([a-zA-Z0-9\.-]+)$ ]]; then
           echo -e "\e033[31;0mInvalid host name: ${{ inputs.host }}\e033[0m" >&2 
           exit 128
         fi
-        if ! [[ "${USERNAME}" !~ ^([a-zA-Z0-9\.-]+)$ ]]; then
+        if ! [[ "${USERNAME}" =~ ^([a-zA-Z0-9\.-]+)$ ]]; then
           echo -e "\e033[31;0mInvalid username provided, must match [a-zA-Z0-9\.-]+\e033[0m" >&2 
           exit 128
         fi
@@ -64,7 +64,7 @@ runs:
           echo -e "\e033[31;0mThe source you provided matches no files.\e033[0m" >&2
           exit 128
         fi
-        if ! [[ "${CLEANUP} !~ ^(yes|no)$ ]]; then
+        if ! [[ "${CLEANUP} =~ ^(yes|no)$ ]]; then
           echo -e "\e033[31;0mThe value provided to 'cleanup' is invalid, must be 'yes' or 'no'.\e033[0m" >&2 
           exit 128
         fi
@@ -72,7 +72,7 @@ runs:
           echo -e "\e033[31;0mThe value provided to 'keep_files_count' is invalid, must be a positive number.\e033[0m" >&2 
           exit 128
         fi
-        if ! [[ "${PORT}" !~ ^([0-9]+)$ ]]; then
+        if ! [[ "${PORT}" =~ ^([0-9]+)$ ]]; then
           echo -e "\e033[31;0mThe value provided to 'port' is invalid, must be a positive number.\e033[0m" >&2 
           exit 128
         fi
