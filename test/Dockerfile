@@ -16,10 +16,11 @@ RUN echo -e "\033[0;32mInstalling OpenSSH and bash...\033[0m" && \
     echo "" >/etc/ssh/authorized_keys && \
     chown test:test /etc/ssh/authorized_keys && \
     chmod 0640 /etc/ssh/authorized_keys && \
-    mkdir -p /test
+    mkdir -p /test && \
+    chown test:test /test
 COPY containerroot /
 
 HEALTHCHECK --start-period=10s CMD /usr/bin/ssh-keyscan 127.0.0.1:2222
 EXPOSE 2222
-USER 100
+USER 1000
 CMD ["/usr/local/bin/init.sh"]

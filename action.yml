@@ -45,7 +45,7 @@ runs:
         KEEP_FILES_COUNT: ${{ inputs.keep_files_count }}
         PORT: ${{ inputs.port }}
       run: |
-        set -x
+        set -e
         echo "::add-mask::${USERNAME}"
         echo "::add-mask::${KEY}"
         if ! [[ "${HOST}" !~ ^([a-zA-Z0-9\.-]+)$ ]]; then
@@ -56,7 +56,7 @@ runs:
           echo -e "\e033[31;0mInvalid username provided, must match [a-zA-Z0-9\.-]+\e033[0m" >&2 
           exit 128
         fi
-        if ! [[ "${KEY}" !~ ^ssh- ]]; then
+        if ! [[ "$(echo "${KEY}" | base64 -d)" !~ ^ssh- ]]; then
           echo -e "\e033[31;0mInvalid SSH key provided (must start with ssh-)\e033[0m" >&2 
           exit 128
         fi
@@ -88,14 +88,14 @@ runs:
         CLEANUP: ${{ inputs.cleanup }}
         KEEP_FILES_COUNT: ${{ inputs.keep_files_count }}
       run: |
-        set -x
+        set -e
         echo "::add-mask::${USERNAME}"
         echo "::add-mask::${KEY}"
         mkdir -p ~/.ssh
         chmod 0755 ~/.ssh
         ORIGINAL_UMASK=$(umask)
         umask 0077
-        echo "${KEY}" >~/.ssh/id_rsa.sshupload
+        echo "${KEY}" | base64 -d >~/.ssh/id_rsa.sshupload
         umask "${ORIGINAL_UMASK}"
     - name: "Upload files"
       env:
@@ -109,7 +109,7 @@ runs:
         PORT: ${{ inputs.port }}
       shell: bash
       run: |
-        set -x
+        set -e
         echo "::add-mask::${USERNAME}"
         echo "::add-mask::${KEY}"
         scp -r -P "${PORT}" -i ~/.ssh/id_rsa.sshupload "${SOURCE}" "${USERNAME}@${HOST}:${TARGET}"
@@ -129,5 +129,5 @@ runs:
       shell: bash
       if: always()
       run: |
-        set -x
+        set -e
         rm -rf ~/.ssh/id_rsa.sshupload

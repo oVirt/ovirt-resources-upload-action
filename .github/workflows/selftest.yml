@@ -14,8 +14,7 @@ jobs:
         run: |
           set -e
           ssh-keygen -b 2048 -t rsa -f ~/.ssh/id_rsa -q -N ""
-          echo "::set-output name=private-key::$(cat ~/.ssh/id_rsa)"
-          echo "::set-output name=public-key::$(cat ~/.ssh/id_rsa.pub)"
+          echo "::set-output name=private-key-base64::$(cat ~/.ssh/id_rsa | base64)"
       - name: Start backing server
         run: |
           set -e
@@ -23,6 +22,7 @@ jobs:
           CONTAINER_ID=$(docker create -e "SSH_KEY=$(cat ~/.ssh/id_rsa.pub)" -p 2222:2222 sshd)
           docker start "${CONTAINER_ID}"
           until [ "$(docker inspect -f '{{.State.Health.Status}}' "${CONTAINER_ID}")" == "healthy" ]; do
+            echo "Waiting for SSH container to come up, current status is $(docker inspect -f '{{.State.Health.Status}}' "${CONTAINER_ID}")..." 
             sleep 1;
           done
       - name: Generate test data
@@ -36,7 +36,7 @@ jobs:
           host: 127.0.0.1
           port: 2222
           username: test
-          key: ${{ steps.ssh-key.outputs.private-key }}
+          key: ${{ steps.ssh-key.outputs.private-key-base64 }}
           source: testdata/*
           target: /test
       - name: Check uploaded files

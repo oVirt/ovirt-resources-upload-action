@@ -21,8 +21,8 @@ jobs:
         with:
           # SSH username for upload. Required.
           username: test
-          # SSH key for upload. Required
-          key: ssh-rsa ...
+          # Base64-encoded SSH key for upload. Required
+          key: put-key-here
           # Which files to upload.
           source: testdata/*
           # Which directory to upload to. This directory must exist on the target server.
