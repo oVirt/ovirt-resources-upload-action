@@ -18,17 +18,21 @@ jobs:
       - name: Start backing server
         run: |
           set -ex
+          echo -e "\033[32;0mBuilding container image...\033[0m"
           docker build -t sshd test
+          echo -e "\033[32;0mCreating container...\033[0m"
           CONTAINER_ID=$(docker create -e "SSH_KEY=$(cat ~/.ssh/id_rsa.pub)" -p 2222:2222 sshd)
+          echo -e "\033[32;0mStarting container...\033[0m"
           docker start "${CONTAINER_ID}"
           i=0
+          echo -e "\033[32;0mWaiting for container to be healthy...\033[0m"
           until [ "$(docker inspect -f '{{.State.Health.Status}}' "${CONTAINER_ID}")" == "healthy" ]; do
             let i++
             if [ i -gt 30 ]; then
               echo "Backing server failed to come up."
               exit 1
             fi
-            echo "Waiting for SSH container to come up, current status is $(docker inspect -f '{{.State.Health.Status}}' "${CONTAINER_ID}")..." 
+            echo "Still waiting for SSH container to come up, current status is $(docker inspect -f '{{.State.Health.Status}}' "${CONTAINER_ID}")..." 
             sleep 1;
           done
       - name: Generate test data
