@@ -17,7 +17,7 @@ jobs:
           echo "::set-output name=private-key-base64::$(cat ~/.ssh/id_rsa | base64)"
       - name: Start backing server
         run: |
-          set -ex
+          set -e
           echo -e "\033[32;0mBuilding container image...\033[0m"
           docker build -t sshd test
           echo -e "\033[32;0mCreating container...\033[0m"
@@ -27,7 +27,7 @@ jobs:
           i=0
           echo -e "\033[32;0mWaiting for container to be healthy...\033[0m"
           until [ "$(docker inspect -f '{{.State.Health.Status}}' "${CONTAINER_ID}")" == "healthy" ]; do
-            ((i++))
+            i=$((i+1))
             if [ "$i" -gt 30 ]; then
               echo "Backing server failed to come up."
               exit 1
