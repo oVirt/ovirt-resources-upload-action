@@ -49,31 +49,31 @@ runs:
         echo "::add-mask::${USERNAME}"
         echo "::add-mask::${KEY}"
         if ! [[ "${HOST}" =~ ^([a-zA-Z0-9\.-]+)$ ]]; then
-          echo -e "\e033[31;0mInvalid host name: ${{ inputs.host }}\e033[0m" >&2 
+          echo -e "\e[31mInvalid host name: ${{ inputs.host }}\e[0m" >&2 
           exit 128
         fi
         if ! [[ "${USERNAME}" =~ ^([a-zA-Z0-9\.-]+)$ ]]; then
-          echo -e "\e033[31;0mInvalid username provided, must match [a-zA-Z0-9\.-]+\e033[0m" >&2 
+          echo -e "\e[31;0mInvalid username provided, must match [a-zA-Z0-9\.-]+\e[0m" >&2 
           exit 128
         fi
         if ! [[ "$(echo "${KEY}" | base64 -d)" =~ ^-----BEGIN\ OPENSSH\ PRIVATE\ KEY----- ]]; then
-          echo -e "\e033[31;0mInvalid SSH key provided (must start with ssh-)\e033[0m" >&2 
+          echo -e "\e[31mInvalid SSH key provided (must start with -----BEGIN OPENSSH PRIVATE KEY-----)\e[0m" >&2 
           exit 128
         fi
         if [ -z "$(ls ${SOURCE})" ]; then
-          echo -e "\e033[31;0mThe source you provided matches no files.\e033[0m" >&2
+          echo -e "\e[31mThe source you provided matches no files.\e[0m" >&2
           exit 128
         fi
         if ! [[ "${CLEANUP} =~ ^(yes|no)$ ]]; then
-          echo -e "\e033[31;0mThe value provided to 'cleanup' is invalid, must be 'yes' or 'no'.\e033[0m" >&2 
+          echo -e "\e[31mThe value provided to 'cleanup' is invalid, must be 'yes' or 'no'.\e[0m" >&2 
           exit 128
         fi
         if ! [[ "${KEEP_FILES_COUNT}" !~ ^([0-9]+)$ ]]; then
-          echo -e "\e033[31;0mThe value provided to 'keep_files_count' is invalid, must be a positive number.\e033[0m" >&2 
+          echo -e "\e[31mThe value provided to 'keep_files_count' is invalid, must be a positive number.\e[0m" >&2 
           exit 128
         fi
         if ! [[ "${PORT}" =~ ^([0-9]+)$ ]]; then
-          echo -e "\e033[31;0mThe value provided to 'port' is invalid, must be a positive number.\e033[0m" >&2 
+          echo -e "\e[31mThe value provided to 'port' is invalid, must be a positive number.\e[0m" >&2 
           exit 128
         fi
     - name: "Extract SSH key"
