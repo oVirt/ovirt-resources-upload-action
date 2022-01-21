@@ -17,7 +17,7 @@ jobs:
           echo "::set-output name=private-key-base64::$(cat ~/.ssh/id_rsa | base64)"
       - name: Start backing server
         run: |
-          set -e
+          set -ex
           docker build -t sshd test
           CONTAINER_ID=$(docker create -e "SSH_KEY=$(cat ~/.ssh/id_rsa.pub)" -p 2222:2222 sshd)
           docker start "${CONTAINER_ID}"
