@@ -34,7 +34,7 @@ jobs:
               echo -e "\e[31mBacking server failed to come up.\e[0m"
               exit 1
             fi
-            echo "Still waiting for SSH container to come up, current status is $(docker inspect -f '{{.State.Health.Status}}' "${CONTAINER_ID}")..." 
+            echo -e "Still waiting for SSH container to come up, current status is \e[1m$(docker inspect -f '{{.State.Health.Status}}' "${CONTAINER_ID}")\e[0m..." 
             sleep 1
           done
           echo -e "\e[32mSSH server is now up.\e[0m"
