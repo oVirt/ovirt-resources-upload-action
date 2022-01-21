@@ -35,6 +35,7 @@ jobs:
             echo "Still waiting for SSH container to come up, current status is $(docker inspect -f '{{.State.Health.Status}}' "${CONTAINER_ID}")..." 
             sleep 1
           done
+          echo -e "\033[32;0mSSH server is now up.\033[0m"
       - name: Generate test data
         run: |
           set -e
