@@ -46,7 +46,7 @@ jobs:
             exit 1
           fi
       - name: Upload test data with cleanup
-        uses: .
+        uses: ./
         with:
           host: 127.0.0.1
           username: test
