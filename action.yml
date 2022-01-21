@@ -145,7 +145,8 @@ runs:
       shell: bash
       run: |
         echo -e "\e[32mCleaning up...\e[0m"
-        ssh -v -i ~/.ssh/id_rsa.sshupload -o UserKnownHostsFile=~/.ssh/known_hosts.sshupload "${USERNAME}@${HOST}" "for f in \$(find '${TARGET}' -maxdepth 1 -not -type d -printf '%T@ %Tc %p\n' | sort -nr | awk \'{ print \$9 }\' | tail -n \'+${KEEP_FILES_COUNT}\'); do echo \$i; rm \$i; done"
+        KNOWN_HOSTS_FILE=~/.ssh/known_hosts.sshupload
+        ssh -v -i ~/.ssh/id_rsa.sshupload -o "UserKnownHostsFile ${KNOWN_HOSTS_FILE}" "${USERNAME}@${HOST}" "for f in \$(find '${TARGET}' -maxdepth 1 -not -type d -printf '%T@ %Tc %p\n' | sort -nr | awk \'{ print \$9 }\' | tail -n \'+${KEEP_FILES_COUNT}\'); do echo \$i; rm \$i; done"
     - name: "Remove SSH key"
       shell: bash
       if: always()
