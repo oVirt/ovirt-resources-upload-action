@@ -19,6 +19,8 @@ jobs:
       - name: Upload artifacts
         uses: ovirt/ovirt-resources-upload-action@main
         with:
+          # Add known_hosts file here. Required.
+          known_hosts: ...
           # SSH username for upload. Required.
           username: test
           # Base64-encoded SSH key for upload. Required

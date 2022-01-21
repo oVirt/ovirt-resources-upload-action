@@ -129,10 +129,10 @@ runs:
         PORT: ${{ inputs.port }}
       shell: bash
       run: |
-        set -e
+        set -ex
         echo "::add-mask::${USERNAME}"
         echo -e "\e[32mUploading files...\e[0m"
-        scp -o UserKnownHostsFile=~/.ssh/known_hosts.sshupload -r -P "${PORT}" -i ~/.ssh/id_rsa.sshupload "${SOURCE}" "${USERNAME}@${HOST}:${TARGET}"
+        scp -o UserKnownHostsFile=~/.ssh/known_hosts.sshupload -r -P "${PORT}" -i ~/.ssh/id_rsa.sshupload ${SOURCE} "${USERNAME}@${HOST}:${TARGET}"
     - name: "Cleanup"
       env:
         # We add the parameters as environment variables, so they can be properly quoted in the shell code below.
