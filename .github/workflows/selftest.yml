@@ -19,7 +19,7 @@ jobs:
         run: |
           set -e
           docker build -t sshd test
-          CONTAINER_ID=$(docker create -e "SSH_KEY=$(cat ~/.ssh/id_rsa.pub)" -p 22:2222 sshd)
+          CONTAINER_ID=$(docker create -e "SSH_KEY=$(cat ~/.ssh/id_rsa.pub)" -p 2222:2222 sshd)
           docker start "${CONTAINER_ID}"
           until [ "$(docker inspect -f '{{.State.Health.Status}}' '${CONTAINER_ID}')"=="healthy" ]; do
             sleep 1;
@@ -34,13 +34,14 @@ jobs:
         uses: ./
         with:
           host: 127.0.0.1
+          port: 2222
           username: test
           key: ${{ steps.ssh-key.outputs.private-key }}
           source: testdata/*
           target: /test
       - name: Check uploaded files
         run: |
-          UPLOADED_FILES_COUNT=$(ssh -i ~/.ssh/id_rsa test@127.0.0.1 "ls /test" | wc -l)
+          UPLOADED_FILES_COUNT=$(ssh -i ~/.ssh/id_rsa -p 2222 test@127.0.0.1 "ls /test" | wc -l)
           if [ "${UPLOADED_FILES_COUNT}" -ne 1000 ]; then
             echo "Incorrect number of files found on server: ${UPLOADED_FILES_COUNT}"
             exit 1
@@ -49,6 +50,7 @@ jobs:
         uses: ./
         with:
           host: 127.0.0.1
+          port: 2222
           username: test
           key: ${{ steps.ssh-key.outputs.private-key }}
           source: testdata/*
@@ -57,7 +59,7 @@ jobs:
           keep_files_count: 10
       - name: Check uploaded files
         run: |
-          UPLOADED_FILES_COUNT=$(ssh -i ~/.ssh/id_rsa test@127.0.0.1 "ls /test" | wc -l)
+          UPLOADED_FILES_COUNT=$(ssh -i ~/.ssh/id_rsa -p 2222 test@127.0.0.1 "ls /test" | wc -l)
           if [ "${UPLOADED_FILES_COUNT}" -ne 10 ]; then
             echo "Incorrect number of files found on server: ${UPLOADED_FILES_COUNT}"
             exit 1
