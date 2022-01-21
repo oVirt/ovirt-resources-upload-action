@@ -129,7 +129,7 @@ runs:
         PORT: ${{ inputs.port }}
       shell: bash
       run: |
-        set -ex
+        set -e
         echo "::add-mask::${USERNAME}"
         echo -e "\e[32mUploading files...\e[0m"
         scp -o UserKnownHostsFile=~/.ssh/known_hosts.sshupload -r -P "${PORT}" -i ~/.ssh/id_rsa.sshupload ${SOURCE} "${USERNAME}@${HOST}:${TARGET}"
@@ -145,7 +145,7 @@ runs:
       shell: bash
       run: |
         echo -e "\e[32mCleaning up...\e[0m"
-        ssh -o UserKnownHostsFile=~/.ssh/known_hosts.sshupload -i ~/.ssh/id_rsa.sshupload "${USERNAME}@${HOST}" "for f in \$(find '${TARGET}' -maxdepth 1 -not -type d -printf '%T@ %Tc %p\n' | sort -nr | awk \'{ print \$9 }\' | tail -n \'+${KEEP_FILES_COUNT}\'); do echo \$i; rm \$i; done"
+        ssh -v -o UserKnownHostsFile=~/.ssh/known_hosts.sshupload -i ~/.ssh/id_rsa.sshupload "${USERNAME}@${HOST}" "for f in \$(find '${TARGET}' -maxdepth 1 -not -type d -printf '%T@ %Tc %p\n' | sort -nr | awk \'{ print \$9 }\' | tail -n \'+${KEEP_FILES_COUNT}\'); do echo \$i; rm \$i; done"
     - name: "Remove SSH key"
       shell: bash
       if: always()
