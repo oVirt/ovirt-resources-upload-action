@@ -121,7 +121,7 @@ runs:
         TARGET: ${{ inputs.target }}
         CLEANUP: ${{ inputs.cleanup }}
         KEEP_FILES_COUNT: ${{ inputs.keep_files_count }}
-      if: inputs.cleanup == "yes"
+      if: inputs.cleanup == 'yes'
       shell: bash
       run: |
         ssh -i ~/.ssh/id_rsa.sshupload "${USERNAME}@${HOST}" "for f in \$(find '${TARGET}' -maxdepth 1 -not -type d -printf '%T@ %Tc %p\n' | sort -nr | awk \'{ print \$9 }\' | tail -n \'+${KEEP_FILES_COUNT}\'); do echo \$i; rm \$i; done"
