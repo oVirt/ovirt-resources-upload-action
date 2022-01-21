@@ -56,7 +56,7 @@ runs:
           echo -e "\e033[31;0mInvalid username provided, must match [a-zA-Z0-9\.-]+\e033[0m" >&2 
           exit 128
         fi
-        if ! [[ "$(echo "${KEY}" | base64 -d)" !~ ^ssh- ]]; then
+        if ! [[ "$(echo "${KEY}" | base64 -d)" =~ ^ssh- ]]; then
           echo -e "\e033[31;0mInvalid SSH key provided (must start with ssh-)\e033[0m" >&2 
           exit 128
         fi
