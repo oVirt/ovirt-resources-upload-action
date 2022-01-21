@@ -22,7 +22,7 @@ jobs:
           docker build -t sshd test
           CONTAINER_ID=$(docker create -e "SSH_KEY=$(cat ~/.ssh/id_rsa.pub)" -p 2222:2222 sshd)
           docker start "${CONTAINER_ID}"
-          until [ "$(docker inspect -f '{{.State.Health.Status}}' '${CONTAINER_ID}')"=="healthy" ]; do
+          until [ "$(docker inspect -f '{{.State.Health.Status}}' "${CONTAINER_ID}")" == "healthy" ]; do
             sleep 1;
           done
       - name: Generate test data
