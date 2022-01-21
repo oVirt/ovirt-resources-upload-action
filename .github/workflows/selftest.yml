@@ -31,7 +31,7 @@ jobs:
             touch testdata/$i
           done
       - name: Upload test data
-        uses: .
+        uses: ./
         with:
           host: 127.0.0.1
           username: test
