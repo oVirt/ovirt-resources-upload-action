@@ -45,35 +45,42 @@ runs:
         KEEP_FILES_COUNT: ${{ inputs.keep_files_count }}
         PORT: ${{ inputs.port }}
       run: |
-        set -ex
+        set -e
         echo "::add-mask::${USERNAME}"
         echo "::add-mask::${KEY}"
+        echo -e "\e[32mValidating hostname...\e[0m"
         if ! [[ "${HOST}" =~ ^([a-zA-Z0-9\.-]+)$ ]]; then
           echo -e "\e[31mInvalid host name: ${{ inputs.host }}\e[0m" >&2 
           exit 128
         fi
+        echo -e "\e[32mValidating port...\e[0m"
+        if ! [[ "${PORT}" =~ ^([0-9]+)$ ]]; then
+          echo -e "\e[31mThe value provided to 'port' is invalid, must be a positive number.\e[0m" >&2 
+          exit 128
+        fi
+        echo -e "\e[32mValidating username...\e[0m"
         if ! [[ "${USERNAME}" =~ ^([a-zA-Z0-9\.-]+)$ ]]; then
           echo -e "\e[31;0mInvalid username provided, must match [a-zA-Z0-9\.-]+\e[0m" >&2 
           exit 128
         fi
+        echo -e "\e[32mValidating key...\e[0m"
         if ! [[ "$(echo "${KEY}" | base64 -d)" =~ ^-----BEGIN\ OPENSSH\ PRIVATE\ KEY----- ]]; then
           echo -e "\e[31mInvalid SSH key provided (must start with -----BEGIN OPENSSH PRIVATE KEY-----)\e[0m" >&2 
           exit 128
         fi
+        echo -e "\e[32mValidating source...\e[0m"
         if [ -z "$(ls ${SOURCE})" ]; then
           echo -e "\e[31mThe source you provided matches no files.\e[0m" >&2
           exit 128
         fi
+        echo -e "\e[32mValidating cleanup...\e[0m"
         if ! [[ "${CLEANUP} =~ ^(yes|no)$ ]]; then
           echo -e "\e[31mThe value provided to 'cleanup' is invalid, must be 'yes' or 'no'.\e[0m" >&2 
           exit 128
         fi
-        if ! [[ "${KEEP_FILES_COUNT}" !~ ^([0-9]+)$ ]]; then
+        echo -e "\e[32mValidating keep_files_count...\e[0m"
+        if ! [[ "${KEEP_FILES_COUNT}" =~ ^([0-9]+)$ ]]; then
           echo -e "\e[31mThe value provided to 'keep_files_count' is invalid, must be a positive number.\e[0m" >&2 
-          exit 128
-        fi
-        if ! [[ "${PORT}" =~ ^([0-9]+)$ ]]; then
-          echo -e "\e[31mThe value provided to 'port' is invalid, must be a positive number.\e[0m" >&2 
           exit 128
         fi
     - name: "Extract SSH key"
