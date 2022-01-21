@@ -17,6 +17,7 @@ jobs:
           echo "::add-mask::$(cat ~/.ssh/id_rsa | base64 -w 0)"
           echo "::set-output name=private-key-base64::$(cat ~/.ssh/id_rsa | base64 -w 0)"
       - name: Start backing server
+        id: server
         run: |
           set -e
           echo -e "\e[32mBuilding container image...\e[0m"
@@ -37,6 +38,8 @@ jobs:
             sleep 1
           done
           echo -e "\e[32mSSH server is now up.\e[0m"
+          echo -e "\e[32mObtaining SSH server public key...\e[0m"
+          echo "::set-output name=hostkey::$(/usr/bin/ssh-keyscan -p 2222 127.0.0.1)"
       - name: Generate test data
         run: |
           set -e
@@ -51,6 +54,7 @@ jobs:
           key: ${{ steps.ssh-key.outputs.private-key-base64 }}
           source: testdata/*
           target: /test
+          known_hosts: ${{ steps.server.outputs.hostkey }}
       - name: Check uploaded files
         run: |
           set -e
@@ -70,6 +74,7 @@ jobs:
           target: /test
           cleanup: yes
           keep_files_count: 10
+          known_hosts: ${{ steps.server.outputs.hostkey }}
       - name: Check uploaded files
         run: |
           set -e

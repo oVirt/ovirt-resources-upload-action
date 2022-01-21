@@ -29,6 +29,9 @@ inputs:
     description: "How many files to keep on cleanup in the target directory."
     required: false
     default: "1000"
+  known_hosts:
+    description: "Expected known hosts from the server."
+    required: true
 runs:
   using: "composite"
   steps:
@@ -44,6 +47,7 @@ runs:
         CLEANUP: ${{ inputs.cleanup }}
         KEEP_FILES_COUNT: ${{ inputs.keep_files_count }}
         PORT: ${{ inputs.port }}
+        KNOWN_HOSTS: ${{ inputs.known_hosts }}
       run: |
         set -e
         echo "::add-mask::${USERNAME}"
@@ -69,7 +73,6 @@ runs:
           exit 128
         fi
         echo -e "\e[32mValidating source...\e[0m"
-        set -x
         if [ -z "$(ls ${SOURCE})" ]; then
           echo -e "\e[31mThe source you provided matches no files.\e[0m" >&2
           exit 128
@@ -84,6 +87,12 @@ runs:
           echo -e "\e[31mThe value provided to 'keep_files_count' is invalid, must be a positive number.\e[0m" >&2 
           exit 128
         fi
+        echo -e "\e[32mValidating known_hosts...\e[0m"
+        if [ -z "${KNOWN_HOSTS}" ]; then
+          echo -e "\e[31mThe value provided to 'known_hosts' must be provided.\e[0m" >&2 
+          exit 128
+        fi
+        echo -e "\e[32mAll parameters are valid.\e[0m"
     - name: "Extract SSH key"
       shell: bash
       env:
@@ -95,6 +104,7 @@ runs:
         TARGET: ${{ inputs.target }}
         CLEANUP: ${{ inputs.cleanup }}
         KEEP_FILES_COUNT: ${{ inputs.keep_files_count }}
+        KNOWN_HOSTS: ${{ inputs.known_hosts }}
       run: |
         set -e
         echo "::add-mask::${USERNAME}"
@@ -106,6 +116,7 @@ runs:
         umask 0077
         echo "${KEY}" | base64 -d >~/.ssh/id_rsa.sshupload
         umask "${ORIGINAL_UMASK}"
+        echo "${KNOWN_HOSTS}" >~/.ssh/known_hosts.sshupload
     - name: "Upload files"
       env:
         # We add the parameters as environment variables, so they can be properly quoted in the shell code below.
@@ -120,9 +131,8 @@ runs:
       run: |
         set -e
         echo "::add-mask::${USERNAME}"
-        echo "::add-mask::${KEY}"
         echo -e "\e[32mUploading files...\e[0m"
-        scp -r -P "${PORT}" -i ~/.ssh/id_rsa.sshupload "${SOURCE}" "${USERNAME}@${HOST}:${TARGET}"
+        scp -o UserKnownHostsFile=~/.ssh/known_hosts.sshupload -r -P "${PORT}" -i ~/.ssh/id_rsa.sshupload "${SOURCE}" "${USERNAME}@${HOST}:${TARGET}"
     - name: "Cleanup"
       env:
         # We add the parameters as environment variables, so they can be properly quoted in the shell code below.
@@ -135,7 +145,7 @@ runs:
       shell: bash
       run: |
         echo -e "\e[32mCleaning up...\e[0m"
-        ssh -i ~/.ssh/id_rsa.sshupload "${USERNAME}@${HOST}" "for f in \$(find '${TARGET}' -maxdepth 1 -not -type d -printf '%T@ %Tc %p\n' | sort -nr | awk \'{ print \$9 }\' | tail -n \'+${KEEP_FILES_COUNT}\'); do echo \$i; rm \$i; done"
+        ssh -o UserKnownHostsFile=~/.ssh/known_hosts.sshupload -i ~/.ssh/id_rsa.sshupload "${USERNAME}@${HOST}" "for f in \$(find '${TARGET}' -maxdepth 1 -not -type d -printf '%T@ %Tc %p\n' | sort -nr | awk \'{ print \$9 }\' | tail -n \'+${KEEP_FILES_COUNT}\'); do echo \$i; rm \$i; done"
     - name: "Remove SSH key"
       shell: bash
       if: always()
@@ -143,3 +153,4 @@ runs:
         set -e
         echo -e "\e[32mRemoving SSH key...\e[0m"
         rm -rf ~/.ssh/id_rsa.sshupload
+        rm -rf ~/.ssh/known_hosts.sshupload
