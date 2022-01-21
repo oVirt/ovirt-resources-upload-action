@@ -5,7 +5,10 @@ RUN echo -e "\033[0;32mInstalling OpenSSH and bash...\033[0m" && \
     echo -e "\033[0;32mAdding test group...\033[0m" && \
     addgroup -g 1000 test && \
     echo -e "\033[0;32mAdding test user...\033[0m" && \
-    adduser -h "/var/www" -G test -H -S -D -s /bin/bash -u 1000 test && \
+    adduser -h "/test" -G test -H -S -D -s /bin/bash -u 1000 test && \
+    echo -e "\033[0;32mCreating test directory...\033[0m" && \
+    mkdir -p /test && \
+    chown test:test /test && \
     echo -e "\033[0;32mModifying SSHD configuration...\033[0m" && \
     sed -i -e 's/#Port 22/Port 2222/' /etc/ssh/sshd_config && \
     sed -i -e 's$AuthorizedKeysFile\t.ssh/authorized_keys$AuthorizedKeysFile /etc/ssh/authorized_keys$' /etc/ssh/sshd_config && \
@@ -16,9 +19,6 @@ RUN echo -e "\033[0;32mInstalling OpenSSH and bash...\033[0m" && \
     echo "" >/etc/ssh/authorized_keys && \
     chown test:test /etc/ssh/authorized_keys && \
     chmod 0640 /etc/ssh/authorized_keys && \
-    echo -e "\033[0;32mCreating test directory...\033[0m" && \
-    mkdir -p /test && \
-    chown test:test /test && \
     echo -e "\033[0;32mCreating SSH host keys...\033[0m" && \
     echo "HostKey /etc/ssh/ssh_host_rsa_key" >> /etc/ssh/sshd_config && \
     ssh-keygen -A && \
