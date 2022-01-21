@@ -27,13 +27,13 @@ jobs:
           i=0
           echo -e "\033[32;0mWaiting for container to be healthy...\033[0m"
           until [ "$(docker inspect -f '{{.State.Health.Status}}' "${CONTAINER_ID}")" == "healthy" ]; do
-            let i++
-            if [ i -gt 30 ]; then
+            ((i++))
+            if [ "$i" -gt 30 ]; then
               echo "Backing server failed to come up."
               exit 1
             fi
             echo "Still waiting for SSH container to come up, current status is $(docker inspect -f '{{.State.Health.Status}}' "${CONTAINER_ID}")..." 
-            sleep 1;
+            sleep 1
           done
       - name: Generate test data
         run: |
