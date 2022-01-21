@@ -40,6 +40,7 @@ jobs:
           echo -e "\e[32mSSH server is now up.\e[0m"
           echo -e "\e[32mObtaining SSH server public key...\e[0m"
           echo "::set-output name=hostkey::$(/usr/bin/ssh-keyscan -p 2222 127.0.0.1)"
+          /usr/bin/ssh-keyscan -p 2222 127.0.0.1 >~/.ssh/known_hosts.test
           docker inspect "${CONTAINER_ID}"
       - name: Generate test data
         run: |
@@ -59,7 +60,7 @@ jobs:
       - name: Check uploaded files
         run: |
           set -e
-          UPLOADED_FILES_COUNT=$(ssh -i ~/.ssh/id_rsa -p 2222 test@127.0.0.1 "ls /test" | wc -l)
+          UPLOADED_FILES_COUNT=$(ssh -o UserKnownHostsFile=~/.ssh/known_hosts.test -i ~/.ssh/id_rsa -p 2222 test@127.0.0.1 "ls /test" | wc -l)
           if [ "${UPLOADED_FILES_COUNT}" -ne 1000 ]; then
             echo "Incorrect number of files found on server: ${UPLOADED_FILES_COUNT}"
             exit 1
@@ -79,7 +80,7 @@ jobs:
       - name: Check uploaded files
         run: |
           set -e
-          UPLOADED_FILES_COUNT=$(ssh -i ~/.ssh/id_rsa -p 2222 test@127.0.0.1 "ls /test" | wc -l)
+          UPLOADED_FILES_COUNT=$(ssh -o UserKnownHostsFile=~/.ssh/known_hosts.test -i ~/.ssh/id_rsa -p 2222 test@127.0.0.1 "ls /test" | wc -l)
           if [ "${UPLOADED_FILES_COUNT}" -ne 10 ]; then
             echo "Incorrect number of files found on server: ${UPLOADED_FILES_COUNT}"
             exit 1
