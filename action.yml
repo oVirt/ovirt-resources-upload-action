@@ -95,9 +95,10 @@ runs:
         CLEANUP: ${{ inputs.cleanup }}
         KEEP_FILES_COUNT: ${{ inputs.keep_files_count }}
       run: |
-        set -ex
+        set -e
         echo "::add-mask::${USERNAME}"
         echo "::add-mask::${KEY}"
+        echo -e "\e[32mExtracting SSH key...\e[0m"
         mkdir -p ~/.ssh
         chmod 0755 ~/.ssh
         ORIGINAL_UMASK=$(umask)
@@ -116,9 +117,10 @@ runs:
         PORT: ${{ inputs.port }}
       shell: bash
       run: |
-        set -ex
+        set -e
         echo "::add-mask::${USERNAME}"
         echo "::add-mask::${KEY}"
+        echo -e "\e[32mUploading files...\e[0m"
         scp -r -P "${PORT}" -i ~/.ssh/id_rsa.sshupload "${SOURCE}" "${USERNAME}@${HOST}:${TARGET}"
     - name: "Cleanup"
       env:
@@ -131,10 +133,12 @@ runs:
       if: inputs.cleanup == 'yes'
       shell: bash
       run: |
+        echo -e "\e[32mCleaning up...\e[0m"
         ssh -i ~/.ssh/id_rsa.sshupload "${USERNAME}@${HOST}" "for f in \$(find '${TARGET}' -maxdepth 1 -not -type d -printf '%T@ %Tc %p\n' | sort -nr | awk \'{ print \$9 }\' | tail -n \'+${KEEP_FILES_COUNT}\'); do echo \$i; rm \$i; done"
     - name: "Remove SSH key"
       shell: bash
       if: always()
       run: |
-        set -ex
+        set -e
+        echo -e "\e[32mRemoving SSH key...\e[0m"
         rm -rf ~/.ssh/id_rsa.sshupload
