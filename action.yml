@@ -14,7 +14,7 @@ inputs:
   port:
     description: 'Port to use for SSH connection'
     required: false
-    default: 22
+    default: "22"
   source:
     description: 'Files to upload. This parameter allows globbing.'
     required: true
@@ -45,7 +45,7 @@ runs:
         KEEP_FILES_COUNT: ${{ inputs.keep_files_count }}
         PORT: ${{ inputs.port }}
       run: |
-        set -e
+        set -ex
         echo "::add-mask::${USERNAME}"
         echo "::add-mask::${KEY}"
         if ! [[ "${HOST}" !~ ^([a-zA-Z0-9\.-]+)$ ]]; then
@@ -88,7 +88,7 @@ runs:
         CLEANUP: ${{ inputs.cleanup }}
         KEEP_FILES_COUNT: ${{ inputs.keep_files_count }}
       run: |
-        set -e
+        set -ex
         echo "::add-mask::${USERNAME}"
         echo "::add-mask::${KEY}"
         mkdir -p ~/.ssh
@@ -109,7 +109,7 @@ runs:
         PORT: ${{ inputs.port }}
       shell: bash
       run: |
-        set -e
+        set -ex
         echo "::add-mask::${USERNAME}"
         echo "::add-mask::${KEY}"
         scp -r -P "${PORT}" -i ~/.ssh/id_rsa.sshupload "${SOURCE}" "${USERNAME}@${HOST}:${TARGET}"
@@ -129,5 +129,5 @@ runs:
       shell: bash
       if: always()
       run: |
-        set -e
+        set -ex
         rm -rf ~/.ssh/id_rsa.sshupload
