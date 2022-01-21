@@ -8,7 +8,7 @@ RUN echo -e "\033[0;32mInstalling OpenSSH and bash...\033[0m" && \
     adduser -h "/var/www" -G test -H -S -D -s /bin/bash -u 1000 test && \
     echo -e "\033[0;32mModifying SSHD configuration...\033[0m" && \
     sed -i -e 's/#Port 22/Port 2222/' /etc/ssh/sshd_config && \
-    sed -i -e 's$AuthorizedKeysFile      .ssh/authorized_keys$AuthorizedKeysFile /etc/ssh/authorized_keys$' /etc/ssh/sshd_config && \
+    sed -i -e 's$AuthorizedKeysFile\t.ssh/authorized_keys$AuthorizedKeysFile /etc/ssh/authorized_keys$' /etc/ssh/sshd_config && \
     sed -i -e 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config && \
     echo "AllowUsers test" >>/etc/ssh/sshd_config && \
     echo -e "\033[0;32mCreating webroot directory...\033[0m" && \
