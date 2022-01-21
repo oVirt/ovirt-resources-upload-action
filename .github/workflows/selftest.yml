@@ -23,7 +23,7 @@ jobs:
           echo -e "\e[32mBuilding container image...\e[0m"
           docker build -t sshd test
           echo -e "\e[32mCreating container...\e[0m"
-          CONTAINER_ID=$(docker create -e "SSH_KEY=$(cat ~/.ssh/id_rsa.pub)" -p 2222:2222 sshd)
+          CONTAINER_ID=$(docker create -e "SSH_KEY=$(cat ~/.ssh/id_rsa.test.pub)" -p 2222:2222 sshd)
           echo -e "\e[32mStarting container...\e[0m"
           docker start "${CONTAINER_ID}"
           i=0
