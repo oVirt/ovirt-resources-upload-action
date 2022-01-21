@@ -40,6 +40,7 @@ jobs:
           echo -e "\e[32mSSH server is now up.\e[0m"
           echo -e "\e[32mObtaining SSH server public key...\e[0m"
           echo "::set-output name=hostkey::$(/usr/bin/ssh-keyscan -p 2222 127.0.0.1)"
+          docker inspect "${CONTAINER_ID}"
       - name: Generate test data
         run: |
           set -e
