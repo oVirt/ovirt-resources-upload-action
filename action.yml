@@ -1,0 +1,123 @@
+name: 'Upload to resources.ovirt.org'
+description: 'Upload RPMs in a standardized way for oVirt. It must be '
+inputs:
+  host:
+    description: 'Override host name to upload to'
+    required: false
+    default: resources.ovirt.org
+  username:
+    description: 'Username to resources.ovirt.org'
+    required: true
+  key:
+    description: 'SSH private key without a password for resources.ovirt.org'
+    required: true
+  source:
+    description: 'Files to upload. This parameter allows globbing.'
+    required: true
+  target:
+    description: 'Target directory on resources.ovirt.org.'
+    required: false
+  cleanup:
+    description: 'Clean up files in target directory. Can be yes or no. If enabled it will remove all but the last 1000 files by file date from the specified directory.'
+    required: false
+    default: 'no'
+  keep_files_count:
+    description: "How many files to keep on cleanup in the target directory."
+    required: false
+    default: "1000"
+runs:
+  using: "composite"
+  steps:
+    - name: "Validate input"
+      shell: bash
+      env:
+        # We add the parameters as environment variables, so they can be properly quoted in the shell code below.
+        HOST: ${{ inputs.host }}
+        USERNAME: ${{ inputs.username }}
+        KEY: ${{ inputs.key }}
+        SOURCE: ${{ inputs.source }}
+        TARGET: ${{ inputs.target }}
+        CLEANUP: ${{ inputs.cleanup }}
+        KEEP_FILES_COUNT: ${{ inputs.keep_files_count }}
+      run: |
+        set -x
+        echo "::add-mask::${USERNAME}"
+        echo "::add-mask::${KEY}"
+        if ! [[ "${HOST}" !~ ^([a-zA-Z0-9\.-]+)$ ]]; then
+          echo -e "\e033[31;0mInvalid host name: ${{ inputs.host }}\e033[0m" >&2 
+          exit 128
+        fi
+        if ! [[ "${USERNAME}" !~ ^([a-zA-Z0-9\.-]+)$ ]]; then
+          echo -e "\e033[31;0mInvalid username provided, must match [a-zA-Z0-9\.-]+\e033[0m" >&2 
+          exit 128
+        fi
+        if ! [[ "${KEY}" !~ ^ssh- ]]; then
+          echo -e "\e033[31;0mInvalid SSH key provided (must start with ssh-)\e033[0m" >&2 
+          exit 128
+        fi
+        if [ -z "$(ls ${SOURCE})" ]; then
+          echo -e "\e033[31;0mThe source you provided matches no files.\e033[0m" >&2
+          exit 128
+        fi
+        if ! [[ "${CLEANUP} !~ ^(yes|no)$ ]]; then
+          echo -e "\e033[31;0mThe value provided to 'cleanup' is invalid, must be 'yes' or 'no'.\e033[0m" >&2 
+          exit 128
+        fi
+        if ! [[ "${KEEP_FILES_COUNT}" !~ ^([0-9]+)$ ]]; then
+          echo -e "\e033[31;0mThe value provided to 'keep_files_count' is invalid, must be a positive number.\e033[0m" >&2 
+          exit 128
+        fi
+    - name: "Extract SSH key"
+      shell: bash
+      env:
+        # We add the parameters as environment variables, so they can be properly quoted in the shell code below.
+        HOST: ${{ inputs.host }}
+        USERNAME: ${{ inputs.username }}
+        KEY: ${{ inputs.key }}
+        SOURCE: ${{ inputs.source }}
+        TARGET: ${{ inputs.target }}
+        CLEANUP: ${{ inputs.cleanup }}
+        KEEP_FILES_COUNT: ${{ inputs.keep_files_count }}
+      run: |
+        set -x
+        echo "::add-mask::${USERNAME}"
+        echo "::add-mask::${KEY}"
+        mkdir -p ~/.ssh
+        chmod 0755 ~/.ssh
+        ORIGINAL_UMASK=$(umask)
+        umask 0077
+        echo "${KEY}" >~/.ssh/id_rsa.sshupload
+        umask "${ORIGINAL_UMASK}"
+    - name: "Upload files"
+      env:
+        # We add the parameters as environment variables, so they can be properly quoted in the shell code below.
+        HOST: ${{ inputs.host }}
+        USERNAME: ${{ inputs.username }}
+        SOURCE: ${{ inputs.source }}
+        TARGET: ${{ inputs.target }}
+        CLEANUP: ${{ inputs.cleanup }}
+        KEEP_FILES_COUNT: ${{ inputs.keep_files_count }}
+      shell: bash
+      run: |
+        set -x
+        echo "::add-mask::${USERNAME}"
+        echo "::add-mask::${KEY}"
+        scp -r -i ~/.ssh/id_rsa.sshupload "${SOURCE}" "${USERNAME}@${HOST}:${TARGET}"
+    - name: "Cleanup"
+      env:
+        # We add the parameters as environment variables, so they can be properly quoted in the shell code below.
+        HOST: ${{ inputs.host }}
+        USERNAME: ${{ inputs.username }}
+        TARGET: ${{ inputs.target }}
+        CLEANUP: ${{ inputs.cleanup }}
+        KEEP_FILES_COUNT: ${{ inputs.keep_files_count }}
+      if: inputs.cleanup == "yes"
+      shell: bash
+      run: |
+        ssh -i ~/.ssh/id_rsa.sshupload "${USERNAME}@${HOST}" "for f in \$(find '${TARGET}' -maxdepth 1 -not -type d -printf '%T@ %Tc %p\n' | sort -nr | awk \'{ print \$9 }\' | tail -n \'+${KEEP_FILES_COUNT}\'); do echo \$i; rm \$i; done"
+    - name: "Remove SSH key"
+      shell: bash
+      if: always()
+      run: |
+        set -x
+        rm -rf ~/.ssh/id_rsa.sshupload
