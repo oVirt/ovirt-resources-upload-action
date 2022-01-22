@@ -119,7 +119,7 @@ runs:
         cat <<<"${KEY}" >~/.ssh/id_rsa.sshupload
         umask "${ORIGINAL_UMASK}"
         cat <<<"${KNOWN_HOSTS}" >~/.ssh/known_hosts.sshupload
-        HOST_KEY_TYPES=$(cat ~/.ssh/known_hosts.sshupload | cut -f 2)
+        HOST_KEY_TYPES=$(cat ~/.ssh/known_hosts.sshupload | cut -f 2 -d ' ')
         echo -n "${HOST_KEY_TYPES//$'\n'/,}" >~/.ssh/host_key_types.sshupload
     - name: "Upload files"
       env:
