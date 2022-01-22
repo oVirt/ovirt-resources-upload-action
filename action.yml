@@ -51,7 +51,8 @@ runs:
       run: |
         set -e
         echo "::add-mask::${USERNAME}"
-        echo "::add-mask::${KEY}"
+        echo "::add-mask::${KEY//$'\n'/'%0A'}"
+        echo "::add-mask::${KEY//$'\n'/ }"
         echo -e "\e[32mValidating hostname...\e[0m"
         if ! [[ "${HOST}" =~ ^([a-zA-Z0-9\.-]+)$ ]]; then
           echo -e "\e[31mInvalid host name: ${{ inputs.host }}\e[0m" >&2 
@@ -109,6 +110,7 @@ runs:
         set -e
         echo "::add-mask::${USERNAME}"
         echo "::add-mask::${KEY//$'\n'/'%0A'}"
+        echo "::add-mask::${KEY//$'\n'/ }"
         echo -e "\e[32mExtracting SSH key...\e[0m"
         mkdir -p ~/.ssh
         chmod 0755 ~/.ssh
@@ -117,6 +119,8 @@ runs:
         cat <<<"${KEY}" >~/.ssh/id_rsa.sshupload
         umask "${ORIGINAL_UMASK}"
         cat <<<"${KNOWN_HOSTS}" >~/.ssh/known_hosts.sshupload
+        HOST_KEY_TYPES=$(cat ~/.ssh/known_hosts.sshupload | cut -f 2)
+        echo -n "${HOST_KEY_TYPES//$'\n'/,}" >~/.ssh/host_key_types.sshupload
     - name: "Upload files"
       env:
         # We add the parameters as environment variables, so they can be properly quoted in the shell code below.
@@ -132,7 +136,7 @@ runs:
         set -e
         echo "::add-mask::${USERNAME}"
         echo -e "\e[32mUploading files...\e[0m"
-        scp -o UserKnownHostsFile=~/.ssh/known_hosts.sshupload -r -P "${PORT}" -i ~/.ssh/id_rsa.sshupload ${SOURCE} "${USERNAME}@${HOST}:${TARGET}"
+        scp -o UserKnownHostsFile=~/.ssh/known_hosts.sshupload -o "HostKeyAlgorithms=$(cat ~/.ssh/host_key_types.sshupload)" -r -P "${PORT}" -i ~/.ssh/id_rsa.sshupload ${SOURCE} "${USERNAME}@${HOST}:${TARGET}"
     - name: "Cleanup"
       env:
         # We add the parameters as environment variables, so they can be properly quoted in the shell code below.
@@ -144,13 +148,13 @@ runs:
       if: inputs.cleanup == 'yes'
       shell: bash
       run: |
-        set -ex
+        set -e
         echo -e "\e[32mCleaning up...\e[0m"
         KNOWN_HOSTS_FILE=~/.ssh/known_hosts.sshupload
         COMMAND="for f in \$(find '${TARGET}' -maxdepth 1 -not -type d -printf '%T@ %Tc %p\n' | sort -nr | awk \'{ print \$9 }\' | tail -n \'+${KEEP_FILES_COUNT}\'); do echo \$i; rm \$i; done"
         cat $KNOWN_HOSTS_FILE
         echo "Running remote command: ${COMMAND}"
-        ssh -v -i ~/.ssh/id_rsa.sshupload -o "UserKnownHostsFile=${KNOWN_HOSTS_FILE}" "${USERNAME}@${HOST}" "${COMMAND}"
+        ssh -v -i ~/.ssh/id_rsa.sshupload -o "UserKnownHostsFile=${KNOWN_HOSTS_FILE}" -o "HostKeyAlgorithms=$(cat ~/.ssh/host_key_types.sshupload)" "${USERNAME}@${HOST}" "${COMMAND}"
     - name: "Remove SSH key"
       shell: bash
       if: always()
