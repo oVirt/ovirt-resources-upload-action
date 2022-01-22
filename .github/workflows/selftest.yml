@@ -38,10 +38,14 @@ jobs:
             sleep 1
           done
           echo -e "\e[32mSSH server is now up.\e[0m"
-          echo -e "\e[32mObtaining SSH server public key...\e[0m"
+          echo -e "\e[32mObtaining SSH server host key...\e[0m"
           echo "::set-output name=hostkey::$(/usr/bin/ssh-keyscan -p 2222 127.0.0.1)"
-          /usr/bin/ssh-keyscan -p 2222 127.0.0.1 >~/.ssh/known_hosts.test
+          /usr/bin/ssh-keyscan -p 2222 -t rsa 127.0.0.1 >~/.ssh/known_hosts.test
+          /usr/bin/ssh-keyscan -p 2222 -t ecdsa 127.0.0.1 >>~/.ssh/known_hosts.test
+          /usr/bin/ssh-keyscan -p 2222 -t ed25519 127.0.0.1 >>~/.ssh/known_hosts.test
+          /usr/bin/ssh-keyscan -p 2222 -t dsa 127.0.0.1 >>~/.ssh/known_hosts.test
           cat ~/.ssh/known_hosts.test
+          echo -e "\e[32mHost key obtained.\e[0m"
       - name: Generate test data
         run: |
           set -e
