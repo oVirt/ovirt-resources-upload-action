@@ -41,6 +41,7 @@ jobs:
           echo -e "\e[32mObtaining SSH server public key...\e[0m"
           echo "::set-output name=hostkey::$(/usr/bin/ssh-keyscan -p 2222 127.0.0.1)"
           /usr/bin/ssh-keyscan -p 2222 127.0.0.1 >~/.ssh/known_hosts.test
+          cat ~/.ssh/known_hosts.test
       - name: Generate test data
         run: |
           set -e
