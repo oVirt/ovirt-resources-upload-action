@@ -114,9 +114,9 @@ runs:
         chmod 0755 ~/.ssh
         ORIGINAL_UMASK=$(umask)
         umask 0077
-        echo "${KEY}" >~/.ssh/id_rsa.sshupload
+        cat <<<"${KEY}" >~/.ssh/id_rsa.sshupload
         umask "${ORIGINAL_UMASK}"
-        echo "${KNOWN_HOSTS}" >~/.ssh/known_hosts.sshupload
+        cat <<<"${KNOWN_HOSTS}" >~/.ssh/known_hosts.sshupload
     - name: "Upload files"
       env:
         # We add the parameters as environment variables, so they can be properly quoted in the shell code below.
