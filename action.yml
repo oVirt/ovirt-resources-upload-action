@@ -68,7 +68,7 @@ runs:
           exit 128
         fi
         echo -e "\e[32mValidating key...\e[0m"
-        if ! [[ "$(echo "${KEY}" | base64 -d)" =~ ^-----BEGIN\ OPENSSH\ PRIVATE\ KEY----- ]]; then
+        if ! [[ "${KEY}" =~ ^-----BEGIN\ OPENSSH\ PRIVATE\ KEY----- ]]; then
           echo -e "\e[31mInvalid SSH key provided (must start with -----BEGIN OPENSSH PRIVATE KEY-----)\e[0m" >&2 
           exit 128
         fi
@@ -114,7 +114,7 @@ runs:
         chmod 0755 ~/.ssh
         ORIGINAL_UMASK=$(umask)
         umask 0077
-        echo "${KEY}" | base64 -d >~/.ssh/id_rsa.sshupload
+        echo "${KEY}" >~/.ssh/id_rsa.sshupload
         umask "${ORIGINAL_UMASK}"
         echo "${KNOWN_HOSTS}" >~/.ssh/known_hosts.sshupload
     - name: "Upload files"

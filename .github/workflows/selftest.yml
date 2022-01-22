@@ -15,7 +15,8 @@ jobs:
           set -e
           ssh-keygen -b 2048 -t rsa -f ~/.ssh/id_rsa.test -q -N ""
           echo "::add-mask::$(cat ~/.ssh/id_rsa.test | base64 -w 0)"
-          echo "::set-output name=private-key-base64::$(cat ~/.ssh/id_rsa.test | base64 -w 0)"
+          SSH_KEY=$(cat ~/.ssh/id_rsa.test)
+          echo "::set-output name=private-key::${SSH_KEY//$'\n'/'%0A}"
       - name: Start backing server
         id: server
         run: |
@@ -27,24 +28,24 @@ jobs:
           echo -e "\e[32mStarting container...\e[0m"
           docker start "${CONTAINER_ID}"
           i=0
-          echo -e "\e[32mWaiting for container to be healthy...\e[0m"
+          echo -e "\e[32mWaiting for the SSH container to be healthy...\e[0m"
           until [ "$(docker inspect -f '{{.State.Health.Status}}' "${CONTAINER_ID}")" == "healthy" ]; do
             i=$((i+1))
             if [ "$i" -gt 30 ]; then
               echo -e "\e[31mBacking server failed to come up.\e[0m"
               exit 1
             fi
-            echo -e "Still waiting for SSH container to come up, current status is \e[1m$(docker inspect -f '{{.State.Health.Status}}' "${CONTAINER_ID}")\e[0m..." 
+            echo -e "Still waiting for the SSH container to come up, current status is \e[1m$(docker inspect -f '{{.State.Health.Status}}' "${CONTAINER_ID}")\e[0m..." 
             sleep 1
           done
           echo -e "\e[32mSSH server is now up.\e[0m"
-          echo -e "\e[32mObtaining SSH server host key...\e[0m"
-          echo "::set-output name=hostkey::$(/usr/bin/ssh-keyscan -p 2222 127.0.0.1)"
-          /usr/bin/ssh-keyscan -p 2222 -t rsa 127.0.0.1 >~/.ssh/known_hosts.test
-          /usr/bin/ssh-keyscan -p 2222 -t ecdsa 127.0.0.1 >>~/.ssh/known_hosts.test
-          /usr/bin/ssh-keyscan -p 2222 -t ed25519 127.0.0.1 >>~/.ssh/known_hosts.test
-          /usr/bin/ssh-keyscan -p 2222 -t dsa 127.0.0.1 >>~/.ssh/known_hosts.test
-          cat ~/.ssh/known_hosts.test
+          echo -e "\e[32mObtaining SSH server RSA host key...\e[0m"
+          /usr/bin/ssh-keyscan -p 2222 -t rsa 127.0.0.1 >>~/.ssh/known_hosts.test || true
+          /usr/bin/ssh-keyscan -p 2222 -t ecdsa 127.0.0.1 >>~/.ssh/known_hosts.test || true
+          /usr/bin/ssh-keyscan -p 2222 -t ed25519 127.0.0.1 >>~/.ssh/known_hosts.test || true
+          /usr/bin/ssh-keyscan -p 2222 -t dsa 127.0.0.1 >>~/.ssh/known_hosts.test || true
+          HOST_KEYS=$(cat ~/.ssh/known_hosts.test)
+          echo "::set-output name=hostkey::${HOST_KEYS//$'\n'/'%0A}"
           echo -e "\e[32mHost key obtained.\e[0m"
       - name: Generate test data
         run: |
@@ -57,7 +58,7 @@ jobs:
           host: 127.0.0.1
           port: 2222
           username: test
-          key: ${{ steps.ssh-key.outputs.private-key-base64 }}
+          key: ${{ steps.ssh-key.outputs.private-key }}
           source: testdata/*
           target: /test
           known_hosts: ${{ steps.server.outputs.hostkey }}
@@ -75,7 +76,7 @@ jobs:
           host: 127.0.0.1
           port: 2222
           username: test
-          key: ${{ steps.ssh-key.outputs.private-key-base64 }}
+          key: ${{ steps.ssh-key.outputs.private-key }}
           source: testdata/*
           target: /test
           cleanup: yes
