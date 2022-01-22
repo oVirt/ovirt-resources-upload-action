@@ -14,9 +14,9 @@ jobs:
         run: |
           set -e
           ssh-keygen -b 2048 -t rsa -f ~/.ssh/id_rsa.test -q -N ""
-          echo "::add-mask::$(cat ~/.ssh/id_rsa.test | base64 -w 0)"
           SSH_KEY=$(cat ~/.ssh/id_rsa.test)
-          echo "::set-output name=private-key::${SSH_KEY//$'\n'/'%0A}"
+          echo "::add-mask::${SSH_KEY//$'\n'/'%0A'}"
+          echo "::set-output name=private-key::${SSH_KEY//$'\n'/'%0A'}"
       - name: Start backing server
         id: server
         run: |
@@ -45,7 +45,7 @@ jobs:
           /usr/bin/ssh-keyscan -p 2222 -t ed25519 127.0.0.1 >>~/.ssh/known_hosts.test || true
           /usr/bin/ssh-keyscan -p 2222 -t dsa 127.0.0.1 >>~/.ssh/known_hosts.test || true
           HOST_KEYS=$(cat ~/.ssh/known_hosts.test)
-          echo "::set-output name=hostkeys::${HOST_KEYS//$'\n'/'%0A}"
+          echo "::set-output name=hostkeys::${HOST_KEYS//$'\n'/'%0A'}"
           echo -e "\e[32mHost key obtained.\e[0m"
       - name: Generate test data
         run: |

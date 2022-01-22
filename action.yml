@@ -108,7 +108,7 @@ runs:
       run: |
         set -e
         echo "::add-mask::${USERNAME}"
-        echo "::add-mask::${KEY}"
+        echo "::add-mask::${KEY//$'\n'/'%0A'}"
         echo -e "\e[32mExtracting SSH key...\e[0m"
         mkdir -p ~/.ssh
         chmod 0755 ~/.ssh
