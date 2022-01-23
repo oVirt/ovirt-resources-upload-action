@@ -136,7 +136,7 @@ runs:
         set -e
         echo "::add-mask::${USERNAME}"
         echo -e "\e[32mUploading files...\e[0m"
-        scp -o UserKnownHostsFile=~/.ssh/known_hosts.sshupload -o "HostKeyAlgorithms=$(cat ~/.ssh/host_key_types.sshupload)" -r -P "${PORT}" -i ~/.ssh/id_rsa.sshupload ${SOURCE} "${USERNAME}@${HOST}:${TARGET}"
+        scp -o UserKnownHostsFile=~/.ssh/known_hosts.sshupload -o "HostKeyAlgorithms=$(cat ~/.ssh/host_key_types.sshupload)" -o PreferredAuthentications=publickey -r -P "${PORT}" -i ~/.ssh/id_rsa.sshupload ${SOURCE} "${USERNAME}@${HOST}:${TARGET}"
     - name: "Cleanup"
       env:
         # We add the parameters as environment variables, so they can be properly quoted in the shell code below.
@@ -151,10 +151,10 @@ runs:
         set -e
         echo -e "\e[32mCleaning up...\e[0m"
         KNOWN_HOSTS_FILE=~/.ssh/known_hosts.sshupload
-        COMMAND="for f in \$(find '${TARGET}' -maxdepth 1 -not -type d -printf '%T@ %Tc %p\n' | sort -nr | awk \'{ print \$9 }\' | tail -n \'+${KEEP_FILES_COUNT}\'); do echo \$i; rm \$i; done"
+        COMMAND="for f in \$(find '${TARGET}' -maxdepth 1 -not -type d -printf '%T@ %Tc %p\n' | sort -nr | awk '{ print \$9 }' | tail -n \'+${KEEP_FILES_COUNT}\'); do echo \$i; rm \$i; done"
         cat $KNOWN_HOSTS_FILE
         echo "Running remote command: ${COMMAND}"
-        ssh -v -i ~/.ssh/id_rsa.sshupload -o "UserKnownHostsFile=${KNOWN_HOSTS_FILE}" -o "HostKeyAlgorithms=$(cat ~/.ssh/host_key_types.sshupload)" "${USERNAME}@${HOST}" "${COMMAND}"
+        ssh -v -i ~/.ssh/id_rsa.sshupload -o "UserKnownHostsFile=${KNOWN_HOSTS_FILE}" -o "HostKeyAlgorithms=$(cat ~/.ssh/host_key_types.sshupload)" -o PreferredAuthentications=publickey "${USERNAME}@${HOST}" "${COMMAND}"
     - name: "Remove SSH key"
       shell: bash
       if: always()
