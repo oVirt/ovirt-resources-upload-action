@@ -36,3 +36,7 @@ jobs:
           # How many files to keep. Optional, defaults to 1000.
           keep_files_count: 10
 ```
+
+## A note on cleanup
+
+The cleanup process deletes all but the last X files from the target server based on the *modification date*. However, the modification date is preserved during upload, so the deletion process may yield unexpected results. If you are uploading older files make sure to `touch` them before upload!
