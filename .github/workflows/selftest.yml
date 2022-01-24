@@ -65,7 +65,7 @@ jobs:
       - name: Check uploaded files
         run: |
           set -e
-          UPLOADED_FILES_COUNT=$(ssh -o UserKnownHostsFile=~/.ssh/known_hosts.test -i ~/.ssh/id_rsa.test -p 2222 test@127.0.0.1 "ls /test" | wc -l)
+          UPLOADED_FILES_COUNT=$(ssh -o UserKnownHostsFile=~/.ssh/known_hosts.test -i ~/.ssh/id_rsa.test -p 2222 test@127.0.0.1 "ls -1 /test" | wc -l)
           if [ "${UPLOADED_FILES_COUNT}" -ne 1000 ]; then
             echo "Incorrect number of files found on server: ${UPLOADED_FILES_COUNT}"
             exit 1
@@ -85,7 +85,7 @@ jobs:
       - name: Check uploaded files
         run: |
           set -e
-          UPLOADED_FILES_COUNT=$(ssh -o UserKnownHostsFile=~/.ssh/known_hosts.test -i ~/.ssh/id_rsa.test -p 2222 test@127.0.0.1 "ls /test" | wc -l)
+          UPLOADED_FILES_COUNT=$(ssh -o UserKnownHostsFile=~/.ssh/known_hosts.test -i ~/.ssh/id_rsa.test -p 2222 test@127.0.0.1 "ls -1 /test" | wc -l)
           if [ "${UPLOADED_FILES_COUNT}" -ne 10 ]; then
             echo "Incorrect number of files found on server: ${UPLOADED_FILES_COUNT}"
             exit 1
