@@ -40,18 +40,22 @@ jobs:
           done
           echo -e "\e[32mSSH server is now up.\e[0m"
           echo -e "\e[32mObtaining SSH server RSA host key...\e[0m"
-          /usr/bin/ssh-keyscan -p 2222 -t rsa 127.0.0.1 >>~/.ssh/known_hosts.test || true
-          /usr/bin/ssh-keyscan -p 2222 -t ecdsa 127.0.0.1 >>~/.ssh/known_hosts.test || true
-          /usr/bin/ssh-keyscan -p 2222 -t ed25519 127.0.0.1 >>~/.ssh/known_hosts.test || true
-          /usr/bin/ssh-keyscan -p 2222 -t dsa 127.0.0.1 >>~/.ssh/known_hosts.test || true
+          /usr/bin/ssh-keyscan -p 2222 127.0.0.1 >~/.ssh/known_hosts.test
+          echo "Known hosts are:"
+          cat ~/.ssh/known_hosts.test
           HOST_KEYS=$(cat ~/.ssh/known_hosts.test)
+          for keytype in $(cat ~/.ssh/known_hosts.test | cut -f 2 -d ' ' | sed -e 's/ssh-//g'); do
+            ssh -Q key | grep "${keytype}" >> ~/.ssh/keytypes.test
+          done
+          HOST_KEY_ALGOS=$(cat ~/.ssh/keytypes.test)
           echo "::set-output name=hostkeys::${HOST_KEYS//$'\n'/'%0A'}"
+          echo "::set-output name=hostkey-algos::${HOST_KEY_ALGOS//$'\n'/','}"
           echo -e "\e[32mHost key obtained.\e[0m"
       - name: Generate test data
         run: |
           set -e
           mkdir -p testdata
-          for i in $(seq 1 1000); do touch testdata/$i; done
+          for i in $(seq 1 20); do touch testdata/$i; sleep 1; done
       - name: Upload test data
         uses: ./
         with:
@@ -65,8 +69,8 @@ jobs:
       - name: Check uploaded files
         run: |
           set -e
-          UPLOADED_FILES_COUNT=$(ssh -o UserKnownHostsFile=~/.ssh/known_hosts.test -i ~/.ssh/id_rsa.test -p 2222 test@127.0.0.1 "ls /test" | wc -l)
-          if [ "${UPLOADED_FILES_COUNT}" -ne 1000 ]; then
+          UPLOADED_FILES_COUNT=$(ssh -o UserKnownHostsFile=~/.ssh/known_hosts.test -o "HostKeyAlgorithms=${{ steps.server.outputs.hostkey-algos }}" -i ~/.ssh/id_rsa.test -p 2222 test@127.0.0.1 "ls /test" | wc -l)
+          if [ "${UPLOADED_FILES_COUNT}" -ne 20 ]; then
             echo "Incorrect number of files found on server: ${UPLOADED_FILES_COUNT}"
             exit 1
           fi
@@ -85,8 +89,18 @@ jobs:
       - name: Check uploaded files
         run: |
           set -e
-          UPLOADED_FILES_COUNT=$(ssh -o UserKnownHostsFile=~/.ssh/known_hosts.test -i ~/.ssh/id_rsa.test -p 2222 test@127.0.0.1 "ls /test" | wc -l)
+          UPLOADED_FILES_COUNT=$(ssh -o UserKnownHostsFile=~/.ssh/known_hosts.test -o "HostKeyAlgorithms=${{ steps.server.outputs.hostkey-algos }}" -i ~/.ssh/id_rsa.test -p 2222 test@127.0.0.1 "ls -1 /test" | wc -l)
           if [ "${UPLOADED_FILES_COUNT}" -ne 10 ]; then
-            echo "Incorrect number of files found on server: ${UPLOADED_FILES_COUNT}"
+            echo -e "\e[31mIncorrect number of files found on server: ${UPLOADED_FILES_COUNT}\e[0m"
             exit 1
           fi
+          echo -e "\e[32mCorrect number of files on server.\e[0m"
+          UPLOADED_FILES=$(ssh -o UserKnownHostsFile=~/.ssh/known_hosts.test -o "HostKeyAlgorithms=${{ steps.server.outputs.hostkey-algos }}" -i ~/.ssh/id_rsa.test -p 2222 test@127.0.0.1 "ls -1 /test" | sort -n)
+          EXPECTED_FILES="$(seq 11 20 | sort -n)"
+          if [ "${UPLOADED_FILES//$'\n'/' '}" != "${EXPECTED_FILES//$'\n'/' '}" ]; then
+            echo -e "\e[31mMismatching uploaded files.\e[0m"
+            echo -e "\e[31mFound: ${UPLOADED_FILES//$'\n'/' '}\e[0m"
+            echo -e "\e[31mExpected: ${EXPECTED_FILES//$'\n'/' '}\e[0m"
+            exit 1
+          fi
+          echo -e "\e[32mCorrect files left on server.\e[0m"

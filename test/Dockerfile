@@ -21,6 +21,7 @@ RUN echo -e "\033[0;32mInstalling OpenSSH and bash...\033[0m" && \
     chmod 0640 /etc/ssh/authorized_keys && \
     echo -e "\033[0;32mCreating SSH host keys...\033[0m" && \
     echo "HostKey /etc/ssh/ssh_host_rsa_key" >> /etc/ssh/sshd_config && \
+    echo "HostKeyAlgorithms +ssh-rsa" >> /etc/ssh/sshd_config && \
     ssh-keygen -A && \
     chown -R test:test /etc/ssh/
 COPY containerroot /

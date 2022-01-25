@@ -119,8 +119,16 @@ runs:
         cat <<<"${KEY}" >~/.ssh/id_rsa.sshupload
         umask "${ORIGINAL_UMASK}"
         cat <<<"${KNOWN_HOSTS}" >~/.ssh/known_hosts.sshupload
-        HOST_KEY_TYPES=$(cat ~/.ssh/known_hosts.sshupload | cut -f 2 -d ' ')
-        echo -n "${HOST_KEY_TYPES//$'\n'/,}" >~/.ssh/host_key_types.sshupload
+        echo "Supported client host key types are:"
+        ssh -Q key
+        echo -n "" >~/.ssh/keytypes.sshupload
+        for keytype in $(cat ~/.ssh/known_hosts.sshupload | cut -f 2 -d ' ' | sed -e 's/ssh-//g'); do
+            ssh -Q key | grep "${keytype}" >> ~/.ssh/keytypes.sshupload
+        done
+        HOST_KEY_ALGOS=$(cat ~/.ssh/keytypes.sshupload | uniq)
+        rm -rf ~/.ssh/keytypes.sshupload
+        echo -n "${HOST_KEY_ALGOS//$'\n'/,}" >~/.ssh/host_key_types.sshupload
+        cat ~/.ssh/host_key_types.sshupload
     - name: "Upload files"
       env:
         # We add the parameters as environment variables, so they can be properly quoted in the shell code below.
@@ -136,7 +144,7 @@ runs:
         set -e
         echo "::add-mask::${USERNAME}"
         echo -e "\e[32mUploading files...\e[0m"
-        scp -o UserKnownHostsFile=~/.ssh/known_hosts.sshupload -o "HostKeyAlgorithms=$(cat ~/.ssh/host_key_types.sshupload)" -o PreferredAuthentications=publickey -r -P "${PORT}" -i ~/.ssh/id_rsa.sshupload ${SOURCE} "${USERNAME}@${HOST}:${TARGET}"
+        scp -p -o UserKnownHostsFile=~/.ssh/known_hosts.sshupload -o "HostKeyAlgorithms=$(cat ~/.ssh/host_key_types.sshupload)" -o PreferredAuthentications=publickey -r -P "${PORT}" -i ~/.ssh/id_rsa.sshupload ${SOURCE} "${USERNAME}@${HOST}:${TARGET}"
     - name: "Cleanup"
       env:
         # We add the parameters as environment variables, so they can be properly quoted in the shell code below.
@@ -145,16 +153,16 @@ runs:
         TARGET: ${{ inputs.target }}
         CLEANUP: ${{ inputs.cleanup }}
         KEEP_FILES_COUNT: ${{ inputs.keep_files_count }}
+        PORT: ${{ inputs.port }}
       if: inputs.cleanup == 'yes'
       shell: bash
       run: |
         set -e
         echo -e "\e[32mCleaning up...\e[0m"
         KNOWN_HOSTS_FILE=~/.ssh/known_hosts.sshupload
-        COMMAND="for f in \$(find '${TARGET}' -maxdepth 1 -not -type d -printf '%T@ %p\n' | sort -nr | cut -d ' ' -f 2- | tail -n +\$((${KEEP_FILES_COUNT}+1))); do echo \$f; rm \$f; done"
-        cat $KNOWN_HOSTS_FILE
+        COMMAND="set -e; for f in \$(cd '${TARGET}'; ls -1t | tail -n +\$((${KEEP_FILES_COUNT}+1))); do echo \"Deleting file \${f}...\"; rm \"\${f}\"; done"
         echo "Running remote command: ${COMMAND}"
-        ssh -v -i ~/.ssh/id_rsa.sshupload -o "UserKnownHostsFile=${KNOWN_HOSTS_FILE}" -o "HostKeyAlgorithms=$(cat ~/.ssh/host_key_types.sshupload)" -o PreferredAuthentications=publickey "${USERNAME}@${HOST}" "${COMMAND}"
+        ssh -i ~/.ssh/id_rsa.sshupload -o "UserKnownHostsFile=${KNOWN_HOSTS_FILE}" -o "HostKeyAlgorithms=$(cat ~/.ssh/host_key_types.sshupload)" -o PreferredAuthentications=publickey -p "${PORT}" "${USERNAME}@${HOST}" "${COMMAND}"
     - name: "Remove SSH key"
       shell: bash
       if: always()
