@@ -165,7 +165,7 @@ runs:
       run: |
         set -e
         echo -e "\e[32mCleaning up...\e[0m"
-        COMMAND="set -e; for f in \$(cd '${TARGET}'; ls -1t | tail -n +\$((${KEEP_FILES_COUNT}+1))); do echo \"Deleting file \${f}...\"; rm \"\${f}\"; done"
+        COMMAND="set -e; cd '${TARGET}' && for f in \$(ls -1t | tail -n +\$((${KEEP_FILES_COUNT}+1))); do echo \"Deleting file \${f}...\"; rm \"\${f}\"; done"
         echo "Running remote command: ${COMMAND}"
         ssh -i ~/.ssh/id_rsa.sshupload -o "UserKnownHostsFile=~/.ssh/known_hosts.sshupload" -o "HostKeyAlgorithms=$(cat ~/.ssh/host_key_types.sshupload)" -o PreferredAuthentications=publickey -p "${PORT}" "${USERNAME}@${HOST}" "${COMMAND}"
     - name: "Update repository metadata"
