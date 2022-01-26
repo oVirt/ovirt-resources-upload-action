@@ -32,6 +32,10 @@ inputs:
   known_hosts:
     description: "Expected known hosts from the server."
     required: true
+  createrepo:
+    description: 'Update repository metadata in target dir.'
+    required: false
+    default: 'no'
 runs:
   using: "composite"
   steps:
@@ -48,6 +52,7 @@ runs:
         KEEP_FILES_COUNT: ${{ inputs.keep_files_count }}
         PORT: ${{ inputs.port }}
         KNOWN_HOSTS: ${{ inputs.known_hosts }}
+        CREATEREPO: ${{ inputs.createrepo }}
       run: |
         set -e
         echo "::add-mask::${USERNAME}"
@@ -55,22 +60,22 @@ runs:
         echo "::add-mask::${KEY//$'\n'/ }"
         echo -e "\e[32mValidating hostname...\e[0m"
         if ! [[ "${HOST}" =~ ^([a-zA-Z0-9\.-]+)$ ]]; then
-          echo -e "\e[31mInvalid host name: ${{ inputs.host }}\e[0m" >&2 
+          echo -e "\e[31mInvalid host name: ${{ inputs.host }}\e[0m" >&2
           exit 128
         fi
         echo -e "\e[32mValidating port...\e[0m"
         if ! [[ "${PORT}" =~ ^([0-9]+)$ ]]; then
-          echo -e "\e[31mThe value provided to 'port' is invalid, must be a positive number.\e[0m" >&2 
+          echo -e "\e[31mThe value provided to 'port' is invalid, must be a positive number.\e[0m" >&2
           exit 128
         fi
         echo -e "\e[32mValidating username...\e[0m"
         if ! [[ "${USERNAME}" =~ ^([a-zA-Z0-9\.-]+)$ ]]; then
-          echo -e "\e[31;0mInvalid username provided, must match [a-zA-Z0-9\.-]+\e[0m" >&2 
+          echo -e "\e[31;0mInvalid username provided, must match [a-zA-Z0-9\.-]+\e[0m" >&2
           exit 128
         fi
         echo -e "\e[32mValidating key...\e[0m"
         if ! [[ "${KEY}" =~ ^-----BEGIN\ OPENSSH\ PRIVATE\ KEY----- ]]; then
-          echo -e "\e[31mInvalid SSH key provided (must start with -----BEGIN OPENSSH PRIVATE KEY-----)\e[0m" >&2 
+          echo -e "\e[31mInvalid SSH key provided (must start with -----BEGIN OPENSSH PRIVATE KEY-----)\e[0m" >&2
           exit 128
         fi
         echo -e "\e[32mValidating source...\e[0m"
@@ -80,17 +85,22 @@ runs:
         fi
         echo -e "\e[32mValidating cleanup...\e[0m"
         if ! [[ "${CLEANUP}" =~ ^(yes|no)$ ]]; then
-          echo -e "\e[31mThe value provided to 'cleanup' is invalid, must be 'yes' or 'no'.\e[0m" >&2 
+          echo -e "\e[31mThe value provided to 'cleanup' is invalid, must be 'yes' or 'no'.\e[0m" >&2
           exit 128
         fi
         echo -e "\e[32mValidating keep_files_count...\e[0m"
         if ! [[ "${KEEP_FILES_COUNT}" =~ ^([0-9]+)$ ]]; then
-          echo -e "\e[31mThe value provided to 'keep_files_count' is invalid, must be a positive number.\e[0m" >&2 
+          echo -e "\e[31mThe value provided to 'keep_files_count' is invalid, must be a positive number.\e[0m" >&2
           exit 128
         fi
         echo -e "\e[32mValidating known_hosts...\e[0m"
         if [ -z "${KNOWN_HOSTS}" ]; then
-          echo -e "\e[31mThe value provided to 'known_hosts' must be provided.\e[0m" >&2 
+          echo -e "\e[31mThe value provided to 'known_hosts' must be provided.\e[0m" >&2
+          exit 128
+        fi
+        echo -e "\e[32mValidating createrepo...\e[0m"
+        if ! [[ "${CREATEREPO}" =~ ^(yes|no)$ ]]; then
+          echo -e "\e[31mThe value provided to 'createrepo' is invalid, must be 'yes' or 'no'.\e[0m" >&2
           exit 128
         fi
         echo -e "\e[32mAll parameters are valid.\e[0m"
@@ -103,8 +113,6 @@ runs:
         KEY: ${{ inputs.key }}
         SOURCE: ${{ inputs.source }}
         TARGET: ${{ inputs.target }}
-        CLEANUP: ${{ inputs.cleanup }}
-        KEEP_FILES_COUNT: ${{ inputs.keep_files_count }}
         KNOWN_HOSTS: ${{ inputs.known_hosts }}
       run: |
         set -e
@@ -136,8 +144,6 @@ runs:
         USERNAME: ${{ inputs.username }}
         SOURCE: ${{ inputs.source }}
         TARGET: ${{ inputs.target }}
-        CLEANUP: ${{ inputs.cleanup }}
-        KEEP_FILES_COUNT: ${{ inputs.keep_files_count }}
         PORT: ${{ inputs.port }}
       shell: bash
       run: |
@@ -159,10 +165,24 @@ runs:
       run: |
         set -e
         echo -e "\e[32mCleaning up...\e[0m"
-        KNOWN_HOSTS_FILE=~/.ssh/known_hosts.sshupload
         COMMAND="set -e; for f in \$(cd '${TARGET}'; ls -1t | tail -n +\$((${KEEP_FILES_COUNT}+1))); do echo \"Deleting file \${f}...\"; rm \"\${f}\"; done"
         echo "Running remote command: ${COMMAND}"
-        ssh -i ~/.ssh/id_rsa.sshupload -o "UserKnownHostsFile=${KNOWN_HOSTS_FILE}" -o "HostKeyAlgorithms=$(cat ~/.ssh/host_key_types.sshupload)" -o PreferredAuthentications=publickey -p "${PORT}" "${USERNAME}@${HOST}" "${COMMAND}"
+        ssh -i ~/.ssh/id_rsa.sshupload -o "UserKnownHostsFile=~/.ssh/known_hosts.sshupload" -o "HostKeyAlgorithms=$(cat ~/.ssh/host_key_types.sshupload)" -o PreferredAuthentications=publickey -p "${PORT}" "${USERNAME}@${HOST}" "${COMMAND}"
+    - name: "Update repository metadata"
+      env:
+        # We add the parameters as environment variables, so they can be properly quoted in the shell code below.
+        HOST: ${{ inputs.host }}
+        USERNAME: ${{ inputs.username }}
+        TARGET: ${{ inputs.target }}
+        PORT: ${{ inputs.port }}
+      if: inputs.createrepo == 'yes'
+      shell: bash
+      run: |
+        set -e
+        echo -e "\e[32mUpdating repository metadata...\e[0m"
+        COMMAND="set -e; cd '${TARGET}'; createrepo_c --update ."
+        echo "Running remote command: ${COMMAND}"
+        ssh -i ~/.ssh/id_rsa.sshupload -o "UserKnownHostsFile=~/.ssh/known_hosts.sshupload" -o "HostKeyAlgorithms=$(cat ~/.ssh/host_key_types.sshupload)" -o PreferredAuthentications=publickey -p "${PORT}" "${USERNAME}@${HOST}" "${COMMAND}"
     - name: "Remove SSH key"
       shell: bash
       if: always()
