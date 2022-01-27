@@ -130,13 +130,14 @@ runs:
         echo "Supported client host key types:"
         ssh -Q key
         echo -n "" >~/.ssh/keytypes.sshupload
+        echo "Provided client host key types:"
         for keytype in $(cat ~/.ssh/known_hosts.sshupload | cut -f 2 -d ' ' | sed -e 's/ssh-//g'); do
-            ssh -Q key | grep "${keytype}" >> ~/.ssh/keytypes.sshupload
+            ssh -Q key | grep "${keytype}" | tee -a ~/.ssh/keytypes.sshupload
         done
         HOST_KEY_ALGOS=$(cat ~/.ssh/keytypes.sshupload | uniq)
         rm -rf ~/.ssh/keytypes.sshupload
         echo -n "${HOST_KEY_ALGOS//$'\n'/,}" >~/.ssh/host_key_types.sshupload
-        echo "Provided client host key types:"
+        echo "Common host key types:"
         cat ~/.ssh/host_key_types.sshupload
     - name: "Upload files"
       env:
@@ -151,7 +152,6 @@ runs:
         set -e
         echo "::add-mask::${USERNAME}"
         echo -e "\e[32mUploading files...\e[0m"
-        cat ~/.ssh/known_hosts.sshupload
         scp -p -o UserKnownHostsFile=~/.ssh/known_hosts.sshupload -o "HostKeyAlgorithms=$(cat ~/.ssh/host_key_types.sshupload)" -o PreferredAuthentications=publickey -r -P "${PORT}" -i ~/.ssh/id_rsa.sshupload ${SOURCE} "${USERNAME}@${HOST}:${TARGET}"
     - name: "Cleanup"
       env:
@@ -167,9 +167,9 @@ runs:
       run: |
         set -e
         echo -e "\e[32mCleaning up...\e[0m"
+        cat <<<"${KNOWN_HOSTS}" >~/.ssh/known_hosts.sshupload
         COMMAND="set -e; cd '${TARGET}' && for f in \$(ls -1t | tail -n +\$((${KEEP_FILES_COUNT}+1))); do echo \"Deleting file \${f}...\"; rm \"\${f}\"; done"
-        echo "Running remote command: ${COMMAND}"
-        cat ~/.ssh/known_hosts.sshupload
+        echo "Running remote command: ${COMMAND}"        
         ssh -i ~/.ssh/id_rsa.sshupload -o "UserKnownHostsFile=~/.ssh/known_hosts.sshupload" -o "HostKeyAlgorithms=$(cat ~/.ssh/host_key_types.sshupload)" -o PreferredAuthentications=publickey -p "${PORT}" "${USERNAME}@${HOST}" "${COMMAND}"
     - name: "Update repository metadata"
       env:
@@ -183,6 +183,7 @@ runs:
       run: |
         set -e
         echo -e "\e[32mUpdating repository metadata...\e[0m"
+        cat <<<"${KNOWN_HOSTS}" >~/.ssh/known_hosts.sshupload
         COMMAND="set -e; cd '${TARGET}'; createrepo_c --update ."
         echo "Running remote command: ${COMMAND}"
         ssh -i ~/.ssh/id_rsa.sshupload -o "UserKnownHostsFile=~/.ssh/known_hosts.sshupload" -o "HostKeyAlgorithms=$(cat ~/.ssh/host_key_types.sshupload)" -o PreferredAuthentications=publickey -p "${PORT}" "${USERNAME}@${HOST}" "${COMMAND}"
