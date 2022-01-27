@@ -162,6 +162,7 @@ runs:
         CLEANUP: ${{ inputs.cleanup }}
         KEEP_FILES_COUNT: ${{ inputs.keep_files_count }}
         PORT: ${{ inputs.port }}
+        KNOWN_HOSTS: ${{ inputs.known_hosts }}
       if: inputs.cleanup == 'yes'
       shell: bash
       run: |
@@ -178,6 +179,7 @@ runs:
         USERNAME: ${{ inputs.username }}
         TARGET: ${{ inputs.target }}
         PORT: ${{ inputs.port }}
+        KNOWN_HOSTS: ${{ inputs.known_hosts }}
       if: inputs.createrepo == 'yes'
       shell: bash
       run: |
