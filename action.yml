@@ -21,6 +21,10 @@ inputs:
   target:
     description: 'Target directory on resources.ovirt.org.'
     required: false
+  delete_before_upload:
+    description: 'Delete files in the target with the same name(s) before the upload'
+    required: false
+    default: 'no'
   cleanup:
     description: 'Clean up files in target directory. Can be yes or no. If enabled it will remove all but the last 1000 files by file date from the specified directory.'
     required: false
@@ -48,6 +52,7 @@ runs:
         KEY: ${{ inputs.key }}
         SOURCE: ${{ inputs.source }}
         TARGET: ${{ inputs.target }}
+        DELETE_BEFORE_UPLOAD: ${{ inputs.delete_before_upload }}
         CLEANUP: ${{ inputs.cleanup }}
         KEEP_FILES_COUNT: ${{ inputs.keep_files_count }}
         PORT: ${{ inputs.port }}
@@ -81,6 +86,11 @@ runs:
         echo -e "\e[32mValidating source...\e[0m"
         if [ -z "$(ls ${SOURCE})" ]; then
           echo -e "\e[31mThe source you provided matches no files.\e[0m" >&2
+          exit 128
+        fi
+        echo -e "\e[32mValidating delete_before_upload...\e[0m"
+        if ! [[ "${DELETE_BEFORE_UPLOAD}" =~ ^(yes|no)$ ]]; then
+          echo -e "\e[31mThe value provided to 'delete_before_upload' is invalid, must be 'yes' or 'no'.\e[0m" >&2
           exit 128
         fi
         echo -e "\e[32mValidating cleanup...\e[0m"
@@ -139,6 +149,26 @@ runs:
         echo -n "${HOST_KEY_ALGOS//$'\n'/,}" >~/.ssh/host_key_types.sshupload
         echo "Common host key types:"
         cat ~/.ssh/host_key_types.sshupload
+    - name: "Delete files before upload"
+      env:
+        # We add the parameters as environment variables, so they can be properly quoted in the shell code below.
+        HOST: ${{ inputs.host }}
+        USERNAME: ${{ inputs.username }}
+        SOURCE: ${{ inputs.source }}
+        TARGET: ${{ inputs.target }}
+        DELETE_BEFORE_UPLOAD: ${{ inputs.delete_before_upload }}
+        PORT: ${{ inputs.port }}
+        KNOWN_HOSTS: ${{ inputs.known_hosts }}
+      if: inputs.delete_before_upload == 'yes'
+      shell: bash
+      run: |
+        set -e
+        echo -e "\e[32mDeleting files in the target before upload...\e[0m"
+        cat <<<"${KNOWN_HOSTS}" >~/.ssh/known_hosts.sshupload
+        SOURCE=$(basename "${SOURCE}")
+        COMMAND="set -e; cd '${TARGET}' && rm "${SOURCE}" || true"
+        echo "Running remote command: ${COMMAND}"
+        ssh -i ~/.ssh/id_rsa.sshupload -o UserKnownHostsFile=~/.ssh/known_hosts.sshupload -o "HostKeyAlgorithms=$(cat ~/.ssh/host_key_types.sshupload)" -o PreferredAuthentications=publickey -p "${PORT}" "${USERNAME}@${HOST}" "${COMMAND}"
     - name: "Upload files"
       env:
         # We add the parameters as environment variables, so they can be properly quoted in the shell code below.
