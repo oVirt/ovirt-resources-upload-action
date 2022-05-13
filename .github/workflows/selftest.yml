@@ -104,3 +104,66 @@ jobs:
             exit 1
           fi
           echo -e "\e[32mCorrect files left on server.\e[0m"
+      - name: Create hardlinks to some of the previously uploaded files
+        run: |
+          set -e
+          ssh -o UserKnownHostsFile=~/.ssh/known_hosts.test -o "HostKeyAlgorithms=${{ steps.server.outputs.hostkey-algos }}" -i ~/.ssh/id_rsa.test -p 2222 test@127.0.0.1 "cd /test && cp -l 11 11-copy"
+      - name: Fill one of the files with new data
+        run: |
+          set -e
+          echo 'Test Data' >> testdata/11
+      - name: Re-upload the new file(s) without deleting the files with the same names
+        uses: ./
+        with:
+          host: 127.0.0.1
+          port: 2222
+          username: test
+          key: ${{ steps.ssh-key.outputs.private-key }}
+          source: testdata/11
+          target: /test
+          cleanup: yes
+          known_hosts: ${{ steps.server.outputs.hostkeys }}
+      - name: Test if the upload modified the previously hard-linked file(s)
+        run: |
+          set -e
+          SHA256SUM=$(ssh -o UserKnownHostsFile=~/.ssh/known_hosts.test -o "HostKeyAlgorithms=${{ steps.server.outputs.hostkey-algos }}" -i ~/.ssh/id_rsa.test -p 2222 test@127.0.0.1 "sha256sum /test/11 | cut -f1 -d' '")
+          if [ "${SHA256SUM}" != "15c94dc2cf2ff71f83d0e5b9f7e7c3eb5efa8ba215dca81108cabf91f1958834" ]; then
+            echo -e "\e[31mFile was not properly uploaded.\e[0m"
+            exit 1
+          fi
+
+          SHA256SUM=$(ssh -o UserKnownHostsFile=~/.ssh/known_hosts.test -o "HostKeyAlgorithms=${{ steps.server.outputs.hostkey-algos }}" -i ~/.ssh/id_rsa.test -p 2222 test@127.0.0.1 "sha256sum /test/11-copy | cut -f1 -d' '")
+          if [ "${SHA256SUM}" != "15c94dc2cf2ff71f83d0e5b9f7e7c3eb5efa8ba215dca81108cabf91f1958834" ]; then
+            echo -e "\e[31mPreviously uploaded file wasn't modified by the newly uploaded file.\e[0m"
+            exit 1
+          fi
+      - name: Fill one of the files with (yet more) new data
+        run: |
+          set -e
+          echo 'Test Data Test Data' >> testdata/11
+      - name: Re-upload the new file(s) deleting the files with the same names
+        uses: ./
+        with:
+          host: 127.0.0.1
+          port: 2222
+          username: test
+          key: ${{ steps.ssh-key.outputs.private-key }}
+          source: testdata/11
+          target: /test
+          delete_before_upload: yes
+          cleanup: yes
+          known_hosts: ${{ steps.server.outputs.hostkeys }}
+      - name: Test if the upload modified the previously hard-linked file(s)
+        run: |
+          set -e
+          SHA256SUM=$(ssh -o UserKnownHostsFile=~/.ssh/known_hosts.test -o "HostKeyAlgorithms=${{ steps.server.outputs.hostkey-algos }}" -i ~/.ssh/id_rsa.test -p 2222 test@127.0.0.1 "sha256sum /test/11 | cut -f1 -d' '")
+          if [ "${SHA256SUM}" != "10237c1e142ed418cddb16ec249c89df4ffd4a9a729fdc2a6b41c8aa41f6d027" ]; then
+            echo -e "\e[31mFile was not properly uploaded.\e[0m"
+            exit 1
+          fi
+
+          SHA256SUM=$(ssh -o UserKnownHostsFile=~/.ssh/known_hosts.test -o "HostKeyAlgorithms=${{ steps.server.outputs.hostkey-algos }}" -i ~/.ssh/id_rsa.test -p 2222 test@127.0.0.1 "sha256sum /test/11-copy | cut -f1 -d' '")
+          if [ "${SHA256SUM}" != "15c94dc2cf2ff71f83d0e5b9f7e7c3eb5efa8ba215dca81108cabf91f1958834" ]; then
+            echo -e "\e[31mPreviously uploaded file was modified by the newly uploaded file.\e[0m"
+            exit 1
+          fi
