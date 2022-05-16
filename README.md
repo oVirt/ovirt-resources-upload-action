@@ -31,6 +31,8 @@ jobs:
           target: /test
           # SSH hostname to upload to. Optional, defaults to resources.ovirt.org
           host: resources.ovirt.org 
+          # Delete the file(s) before uploading file(s) with the same name(s). Useful in case we hard-link the uploaded files.
+          delete_before_upload: no
           # Cleanup files on target server, keep the last few. Optional, defaults to "no".
           cleanup: yes
           # How many files to keep. Optional, defaults to 1000.
@@ -40,3 +42,9 @@ jobs:
 ## A note on cleanup
 
 The cleanup process deletes all but the last X files from the target server based on the *modification date*. However, the modification date is preserved during upload, so the deletion process may yield unexpected results. If you are uploading older files make sure to `touch` them before upload!
+
+
+## A note on delete_before_upload
+
+This option is useful when we hard-link the uploaded files i.e. to save disk space, and don't want the upload of the file with the exisiting file name to push changes to all the hard-linked files. Setting delete_before_upload to yes will attempt to delete file before uploading it, effectively implementing a Copy-On-Write approach in this case.
+Please note that if you use wildcards, then all files matching the wildcard in the target directory will be removed, not the files that match the wildcard in the source directory.
