@@ -112,6 +112,10 @@ jobs:
         run: |
           set -e
           echo 'Test Data' >> testdata/11
+      - name: Clean the source directory a bit
+        run: |
+          set -e
+          rm testdata/10 testdata/12 testdata/13 testdata/15 testdata/17
       - name: Re-upload the new file(s) without deleting the files with the same names
         uses: ./
         with:
@@ -119,7 +123,7 @@ jobs:
           port: 2222
           username: test
           key: ${{ steps.ssh-key.outputs.private-key }}
-          source: testdata/11
+          source: testdata/1*
           target: /test
           cleanup: yes
           known_hosts: ${{ steps.server.outputs.hostkeys }}
@@ -148,7 +152,7 @@ jobs:
           port: 2222
           username: test
           key: ${{ steps.ssh-key.outputs.private-key }}
-          source: testdata/11
+          source: testdata/1*
           target: /test
           delete_before_upload: yes
           cleanup: yes

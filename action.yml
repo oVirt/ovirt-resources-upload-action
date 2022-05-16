@@ -165,8 +165,10 @@ runs:
         set -e
         echo -e "\e[32mDeleting files in the target before upload...\e[0m"
         cat <<<"${KNOWN_HOSTS}" >~/.ssh/known_hosts.sshupload
-        SOURCE=$(basename "${SOURCE}")
-        COMMAND="set -e; cd '${TARGET}' && rm "${SOURCE}" || true"
+        echo "SOURCE is set to: ${SOURCE}"
+        FILES=$(echo $SOURCE)
+        echo "FILES is set to: ${FILES}"
+        COMMAND='set -e; cd '${TARGET}' && for file in '${FILES}'; do echo "file: $file" && rm -v $(basename $file) || true; done'
         echo "Running remote command: ${COMMAND}"
         ssh -i ~/.ssh/id_rsa.sshupload -o UserKnownHostsFile=~/.ssh/known_hosts.sshupload -o "HostKeyAlgorithms=$(cat ~/.ssh/host_key_types.sshupload)" -o PreferredAuthentications=publickey -p "${PORT}" "${USERNAME}@${HOST}" "${COMMAND}"
     - name: "Upload files"

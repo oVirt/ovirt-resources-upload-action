@@ -47,4 +47,3 @@ The cleanup process deletes all but the last X files from the target server base
 ## A note on delete_before_upload
 
 This option is useful when we hard-link the uploaded files i.e. to save disk space, and don't want the upload of the file with the exisiting file name to push changes to all the hard-linked files. Setting delete_before_upload to yes will attempt to delete file before uploading it, effectively implementing a Copy-On-Write approach in this case.
-Please note that if you use wildcards, then all files matching the wildcard in the target directory will be removed, not the files that match the wildcard in the source directory.
