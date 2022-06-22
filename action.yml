@@ -183,7 +183,8 @@ runs:
       run: |
         set -e
         echo "::add-mask::${USERNAME}"
-        echo -e "\e[32mUploading files...\e[0m"
+        FILES=$(echo $SOURCE)
+        echo -e "\e[32mUploading "${FILES}" ...\e[0m"
         scp -p -o UserKnownHostsFile=~/.ssh/known_hosts.sshupload -o "HostKeyAlgorithms=$(cat ~/.ssh/host_key_types.sshupload)" -o PreferredAuthentications=publickey -r -P "${PORT}" -i ~/.ssh/id_rsa.sshupload ${SOURCE} "${USERNAME}@${HOST}:${TARGET}"
     - name: "Cleanup"
       env:
