@@ -4,11 +4,11 @@ on:
     - cron: '0 0 * * 6'
   workflow_dispatch: 
 jobs:
-  build:
+  clean:
     strategy:
       matrix:
         runner: [el8, el9]
-    runs-on: [image-builders, "${{ matrix.runner }}"]
+    runs-on: ["${{ matrix.runner }}"]
     steps:
       - name: purge image
-        run: podman image prune -y
+        run: podman image prune -f
