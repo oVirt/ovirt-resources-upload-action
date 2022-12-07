@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         runner: [el8, el9]
-    runs-on: ["${{ matrix.runner }}"]
+    runs-on: [image-builders, "${{ matrix.runner }}"]
     steps:
       - name: purge image
         run: podman image prune -y
