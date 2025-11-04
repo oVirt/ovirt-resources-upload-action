@@ -17,7 +17,7 @@ inputs:
     default: "22"
   source:
     description: 'Files to upload. This parameter allows globbing.'
-    required: true
+    required: false
   target:
     description: 'Target directory on resources.ovirt.org.'
     required: false
@@ -84,7 +84,7 @@ runs:
           exit 128
         fi
         echo -e "\e[32mValidating source...\e[0m"
-        if [ -z "$(ls ${SOURCE})" ]; then
+        if [ -n "${SOURCE}" -a -z "$(ls ${SOURCE})" ]; then
           echo -e "\e[31mThe source you provided matches no files.\e[0m" >&2
           exit 128
         fi
@@ -159,7 +159,7 @@ runs:
         DELETE_BEFORE_UPLOAD: ${{ inputs.delete_before_upload }}
         PORT: ${{ inputs.port }}
         KNOWN_HOSTS: ${{ inputs.known_hosts }}
-      if: inputs.delete_before_upload == 'yes'
+      if: inputs.delete_before_upload == 'yes' && inputs.source != ''
       shell: bash
       run: |
         set -e
@@ -179,6 +179,7 @@ runs:
         SOURCE: ${{ inputs.source }}
         TARGET: ${{ inputs.target }}
         PORT: ${{ inputs.port }}
+      if: inputs.source != ''
       shell: bash
       run: |
         set -e
