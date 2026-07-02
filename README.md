@@ -25,9 +25,9 @@ jobs:
           username: test
           # Base64-encoded SSH key for upload. Required
           key: put-key-here
-          # Which files to upload.
+          # Which files to upload. Required.
           source: testdata/*
-          # Which directory to upload to. This directory must exist on the target server.
+          # Which directory to upload to. Required. Must not contain '..' path traversal sequences.
           target: /test
           # Create the target directory on the server if it does not exist. Optional, defaults to "no".
           create_target_dir: no
