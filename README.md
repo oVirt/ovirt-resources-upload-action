@@ -29,6 +29,8 @@ jobs:
           source: testdata/*
           # Which directory to upload to. This directory must exist on the target server.
           target: /test
+          # Create the target directory on the server if it does not exist. Optional, defaults to "no".
+          create_target_dir: no
           # SSH hostname to upload to. Optional, defaults to resources.ovirt.org
           host: resources.ovirt.org 
           # Delete the file(s) before uploading file(s) with the same name(s). Useful in case we hard-link the uploaded files.

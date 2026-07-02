@@ -40,6 +40,10 @@ inputs:
     description: 'Update repository metadata in target dir.'
     required: false
     default: 'no'
+  create_target_dir:
+    description: 'Create the target directory on the remote host if it does not exist.'
+    required: false
+    default: 'no'
 runs:
   using: "composite"
   steps:
@@ -58,6 +62,7 @@ runs:
         PORT: ${{ inputs.port }}
         KNOWN_HOSTS: ${{ inputs.known_hosts }}
         CREATEREPO: ${{ inputs.createrepo }}
+        CREATE_TARGET_DIR: ${{ inputs.create_target_dir }}
       run: |
         set -e
         echo "::add-mask::${USERNAME}"
@@ -113,6 +118,11 @@ runs:
           echo -e "\e[31mThe value provided to 'createrepo' is invalid, must be 'yes' or 'no'.\e[0m" >&2
           exit 128
         fi
+        echo -e "\e[32mValidating create_target_dir...\e[0m"
+        if ! [[ "${CREATE_TARGET_DIR}" =~ ^(yes|no)$ ]]; then
+          echo -e "\e[31mThe value provided to 'create_target_dir' is invalid, must be 'yes' or 'no'.\e[0m" >&2
+          exit 128
+        fi
         echo -e "\e[32mAll parameters are valid.\e[0m"
     - name: "Extract SSH key"
       shell: bash
@@ -149,6 +159,22 @@ runs:
         echo -n "${HOST_KEY_ALGOS//$'\n'/,}" >~/.ssh/host_key_types.sshupload
         echo "Common host key types:"
         cat ~/.ssh/host_key_types.sshupload
+    - name: "Create target directory"
+      env:
+        HOST: ${{ inputs.host }}
+        USERNAME: ${{ inputs.username }}
+        TARGET: ${{ inputs.target }}
+        PORT: ${{ inputs.port }}
+        KNOWN_HOSTS: ${{ inputs.known_hosts }}
+      if: inputs.create_target_dir == 'yes'
+      shell: bash
+      run: |
+        set -e
+        echo -e "\e[32mCreating target directory '${TARGET}'...\e[0m"
+        cat <<<"${KNOWN_HOSTS}" >~/.ssh/known_hosts.sshupload
+        COMMAND="set -e; mkdir -p '${TARGET}'"
+        echo "Running remote command: ${COMMAND}"
+        ssh -i ~/.ssh/id_rsa.sshupload -o UserKnownHostsFile=~/.ssh/known_hosts.sshupload -o "HostKeyAlgorithms=$(cat ~/.ssh/host_key_types.sshupload)" -o PreferredAuthentications=publickey -p "${PORT}" "${USERNAME}@${HOST}" "${COMMAND}"
     - name: "Delete files before upload"
       env:
         # We add the parameters as environment variables, so they can be properly quoted in the shell code below.
