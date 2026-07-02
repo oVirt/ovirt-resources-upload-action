@@ -20,7 +20,7 @@ inputs:
     required: false
   target:
     description: 'Target directory on resources.ovirt.org.'
-    required: false
+    required: true
   delete_before_upload:
     description: 'Delete files in the target with the same name(s) before the upload'
     required: false
@@ -86,6 +86,15 @@ runs:
         echo -e "\e[32mValidating key...\e[0m"
         if ! [[ "${KEY}" =~ ^-----BEGIN\ OPENSSH\ PRIVATE\ KEY----- ]]; then
           echo -e "\e[31mInvalid SSH key provided (must start with -----BEGIN OPENSSH PRIVATE KEY-----)\e[0m" >&2
+          exit 128
+        fi
+        echo -e "\e[32mValidating target...\e[0m"
+        if [ -z "${TARGET}" ]; then
+          echo -e "\e[31mThe value provided to 'target' must not be empty.\e[0m" >&2
+          exit 128
+        fi
+        if [[ "${TARGET}" =~ (^|/)\.\.(/|$) ]]; then
+          echo -e "\e[31mThe value provided to 'target' must not contain path traversal sequences ('..').\e[0m" >&2
           exit 128
         fi
         echo -e "\e[32mValidating source...\e[0m"
