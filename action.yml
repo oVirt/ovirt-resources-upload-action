@@ -48,6 +48,10 @@ inputs:
     description: 'Update repository metadata in target dir.'
     required: false
     default: 'no'
+  createrepo_dir:
+    description: 'Directory on the remote host in which to run createrepo. Defaults to target if not set.'
+    required: false
+    default: ''
   create_target_dir:
     description: 'Create the target directory on the remote host if it does not exist.'
     required: false
@@ -72,6 +76,7 @@ runs:
         KEEP_DIRS_COUNT: ${{ inputs.keep_dirs_count }}
         KNOWN_HOSTS: ${{ inputs.known_hosts }}
         CREATEREPO: ${{ inputs.createrepo }}
+        CREATEREPO_DIR: ${{ inputs.createrepo_dir }}
         CREATE_TARGET_DIR: ${{ inputs.create_target_dir }}
       run: |
         set -e
@@ -135,6 +140,11 @@ runs:
         echo -e "\e[32mValidating createrepo...\e[0m"
         if ! [[ "${CREATEREPO}" =~ ^(yes|no)$ ]]; then
           echo -e "\e[31mThe value provided to 'createrepo' is invalid, must be 'yes' or 'no'.\e[0m" >&2
+          exit 128
+        fi
+        echo -e "\e[32mValidating createrepo_dir...\e[0m"
+        if [ -n "${CREATEREPO_DIR}" ] && [[ "${CREATEREPO_DIR}" =~ (^|/)\.\.(/$|$) ]]; then
+          echo -e "\e[31mThe value provided to 'createrepo_dir' must not contain path traversal sequences ('..').\e[0m" >&2
           exit 128
         fi
         echo -e "\e[32mValidating create_target_dir...\e[0m"
@@ -287,13 +297,15 @@ runs:
         PORT: ${{ inputs.port }}
         TARGET: ${{ inputs.target }}
         KNOWN_HOSTS: ${{ inputs.known_hosts }}
+        CREATEREPO_DIR: ${{ inputs.createrepo_dir }}
       if: inputs.createrepo == 'yes'
       shell: bash
       run: |
         set -e
-        echo -e "\e[32mUpdating repository metadata...\e[0m"
+        EFFECTIVE_DIR="${CREATEREPO_DIR:-${TARGET}}"
+        echo -e "\e[32mUpdating repository metadata in '${EFFECTIVE_DIR}'...\e[0m"
         cat <<<"${KNOWN_HOSTS}" >~/.ssh/known_hosts.sshupload
-        COMMAND="set -e; cd '${TARGET}'; createrepo_c --update ."
+        COMMAND="set -e; cd '${EFFECTIVE_DIR}'; createrepo_c --update ."
         echo "Running remote command: ${COMMAND}"
         ssh -i ~/.ssh/id_rsa.sshupload -o UserKnownHostsFile=~/.ssh/known_hosts.sshupload -o "HostKeyAlgorithms=$(cat ~/.ssh/host_key_types.sshupload)" -o PreferredAuthentications=publickey -p "${PORT}" "${USERNAME}@${HOST}" "${COMMAND}"
     - name: "Remove SSH key"
