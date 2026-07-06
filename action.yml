@@ -54,12 +54,12 @@ runs:
         HOST: ${{ inputs.host }}
         USERNAME: ${{ inputs.username }}
         KEY: ${{ inputs.key }}
+        PORT: ${{ inputs.port }}
         SOURCE: ${{ inputs.source }}
         TARGET: ${{ inputs.target }}
         DELETE_BEFORE_UPLOAD: ${{ inputs.delete_before_upload }}
         CLEANUP: ${{ inputs.cleanup }}
         KEEP_FILES_COUNT: ${{ inputs.keep_files_count }}
-        PORT: ${{ inputs.port }}
         KNOWN_HOSTS: ${{ inputs.known_hosts }}
         CREATEREPO: ${{ inputs.createrepo }}
         CREATE_TARGET_DIR: ${{ inputs.create_target_dir }}
@@ -172,8 +172,8 @@ runs:
       env:
         HOST: ${{ inputs.host }}
         USERNAME: ${{ inputs.username }}
-        TARGET: ${{ inputs.target }}
         PORT: ${{ inputs.port }}
+        TARGET: ${{ inputs.target }}
         KNOWN_HOSTS: ${{ inputs.known_hosts }}
       if: inputs.create_target_dir == 'yes'
       shell: bash
@@ -189,10 +189,10 @@ runs:
         # We add the parameters as environment variables, so they can be properly quoted in the shell code below.
         HOST: ${{ inputs.host }}
         USERNAME: ${{ inputs.username }}
+        PORT: ${{ inputs.port }}
         SOURCE: ${{ inputs.source }}
         TARGET: ${{ inputs.target }}
         DELETE_BEFORE_UPLOAD: ${{ inputs.delete_before_upload }}
-        PORT: ${{ inputs.port }}
         KNOWN_HOSTS: ${{ inputs.known_hosts }}
       if: inputs.delete_before_upload == 'yes' && inputs.source != ''
       shell: bash
@@ -211,9 +211,9 @@ runs:
         # We add the parameters as environment variables, so they can be properly quoted in the shell code below.
         HOST: ${{ inputs.host }}
         USERNAME: ${{ inputs.username }}
+        PORT: ${{ inputs.port }}
         SOURCE: ${{ inputs.source }}
         TARGET: ${{ inputs.target }}
-        PORT: ${{ inputs.port }}
       if: inputs.source != ''
       shell: bash
       run: |
@@ -227,10 +227,10 @@ runs:
         # We add the parameters as environment variables, so they can be properly quoted in the shell code below.
         HOST: ${{ inputs.host }}
         USERNAME: ${{ inputs.username }}
+        PORT: ${{ inputs.port }}
         TARGET: ${{ inputs.target }}
         CLEANUP: ${{ inputs.cleanup }}
         KEEP_FILES_COUNT: ${{ inputs.keep_files_count }}
-        PORT: ${{ inputs.port }}
         KNOWN_HOSTS: ${{ inputs.known_hosts }}
       if: inputs.cleanup == 'yes'
       shell: bash
@@ -246,8 +246,8 @@ runs:
         # We add the parameters as environment variables, so they can be properly quoted in the shell code below.
         HOST: ${{ inputs.host }}
         USERNAME: ${{ inputs.username }}
-        TARGET: ${{ inputs.target }}
         PORT: ${{ inputs.port }}
+        TARGET: ${{ inputs.target }}
         KNOWN_HOSTS: ${{ inputs.known_hosts }}
       if: inputs.createrepo == 'yes'
       shell: bash
